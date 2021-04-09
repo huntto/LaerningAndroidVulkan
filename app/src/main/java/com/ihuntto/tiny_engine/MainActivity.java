@@ -1,30 +1,69 @@
 package com.ihuntto.tiny_engine;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
+import android.content.res.AssetManager;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.Surface;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.View;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = MainActivity.class.getSimpleName();
 
     // Used to load the 'native-lib' library on application startup.
     static {
         System.loadLibrary("native-lib");
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        SurfaceView surfaceView = new SurfaceView(this);
+        setContentView(surfaceView);
 
-        // Example of a call to a native method
-        TextView tv = findViewById(R.id.sample_text);
-        tv.setText(stringFromJNI());
+        setAssetManager(getAssets(), getDataDir().getAbsolutePath());
+        surfaceView.getHolder().addCallback(mCallback);
+        surfaceView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                draw();
+                return true;
+            }
+        });
     }
 
-    /**
-     * A native method that is implemented by the 'native-lib' native library,
-     * which is packaged with this application.
-     */
-    public native String stringFromJNI();
+    private final SurfaceHolder.Callback mCallback = new SurfaceHolder.Callback() {
+        @Override
+        public void surfaceCreated(SurfaceHolder holder) {
+            Log.d(TAG, "surfaceCreated");
+            init(holder.getSurface());
+        }
+
+        @Override
+        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+            Log.d(TAG, "surfaceChanged: width=" + width + " height=" + height);
+        }
+
+        @Override
+        public void surfaceDestroyed(SurfaceHolder holder) {
+            Log.d(TAG, "surfaceDestroyed");
+            cleanup();
+        }
+    };
+
+    private native void init(@NonNull Surface surface);
+
+    private native void cleanup();
+
+    private native void setAssetManager(@NonNull AssetManager assetManager, String dataPath);
+
+    private native void draw();
 }

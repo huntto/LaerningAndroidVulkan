@@ -1,6 +1,10 @@
 #ifndef TINY_ENGINE_VULKAN_APPLICATION_H
 #define TINY_ENGINE_VULKAN_APPLICATION_H
 
+#include <vulkan/vulkan.h>
+#include <string>
+#include <vector>
+
 namespace tiny_engine {
 
 class VulkanApplication {
@@ -13,6 +17,8 @@ public:
 
 protected:
     virtual void CreateInstance();
+
+    virtual void CreateDebugMessenger();
 
     virtual void CreateSurface();
 
@@ -53,6 +59,15 @@ protected:
     virtual void CreateTextureSampler();
 
     virtual void CreateDepthResources();
+
+    virtual void DestroyDebugMessenger();
+
+protected:
+    std::string application_name_;
+    std::vector<const char *> extensions_;
+    std::vector<const char *> layers_;
+    VkInstance instance_ = VK_NULL_HANDLE;
+    VkDebugUtilsMessengerEXT debug_messenger_ = VK_NULL_HANDLE;
 };
 
 } //namespace tiny_engine

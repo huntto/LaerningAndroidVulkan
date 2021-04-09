@@ -11,15 +11,13 @@ set_target_properties(VkLayer_khronos_validation-lib
 
 add_library(native-lib
         SHARED
-        native-lib.cpp)
-
-add_library(tiny_engine
-        SHARED
-        tiny_engine/vulkan_application.cpp)
+        native-lib.cpp
+        triangle_application.cpp
+        tiny_engine/vulkan_application.cpp
+        tiny_engine/filesystem.cpp)
 
 target_link_libraries(native-lib
         log
         vulkan
         android
-        ${VkLayer_khronos_validation-lib}
-        ${tiny_engine})
+        ${VkLayer_khronos_validation-lib})
