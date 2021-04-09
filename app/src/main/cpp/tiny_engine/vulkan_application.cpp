@@ -1,5 +1,7 @@
 #include "vulkan_application.h"
 
+#include <vulkan/vulkan_android.h>
+
 #include "log.h"
 
 namespace tiny_engine {
@@ -32,6 +34,7 @@ void VulkanApplication::Init() {
 void VulkanApplication::Draw() {}
 
 void VulkanApplication::Cleanup() {
+    vkDestroySurfaceKHR(instance_, surface_, nullptr);
     DestroyDebugMessenger();
     vkDestroyInstance(instance_, nullptr);
 }
@@ -90,7 +93,18 @@ void VulkanApplication::CreateDebugMessenger() {
     }
 }
 
-void VulkanApplication::CreateSurface() {}
+void VulkanApplication::CreateSurface() {
+    VkAndroidSurfaceCreateInfoKHR create_info;
+    create_info.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
+    create_info.pNext = nullptr;
+    create_info.flags = 0;
+    create_info.window = static_cast<ANativeWindow *>(native_window_);
+
+    if (vkCreateAndroidSurfaceKHR(instance_, &create_info, nullptr,
+                                  &surface_) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create surface!");
+    }
+}
 
 void VulkanApplication::CreateDevice() {}
 

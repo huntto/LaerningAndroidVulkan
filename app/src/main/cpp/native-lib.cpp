@@ -1,6 +1,8 @@
 #include <jni.h>
 #include <string>
 #include <memory>
+#include <android/native_window_jni.h>
+#include <android/asset_manager_jni.h>
 
 #include "triangle_application.h"
 
@@ -10,7 +12,8 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_ihuntto_tiny_1engine_MainActivity_init(JNIEnv *env, jobject thiz, jobject surface) {
     if (application == nullptr) {
-        application = std::make_shared<TriangleApplication>();
+        ANativeWindow *native_window = ANativeWindow_fromSurface(env, surface);
+        application = std::make_shared<TriangleApplication>(native_window);
         application->Init();
     }
 }

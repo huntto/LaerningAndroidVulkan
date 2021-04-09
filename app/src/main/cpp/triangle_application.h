@@ -7,7 +7,7 @@
 
 class TriangleApplication : public tiny_engine::VulkanApplication {
 public:
-    TriangleApplication() {
+    TriangleApplication(void *native_window) {
         layers_ = {
                 "VK_LAYER_KHRONOS_validation"
         };
@@ -17,6 +17,7 @@ public:
                 VK_EXT_DEBUG_UTILS_EXTENSION_NAME
         };
         application_name_ = "Triangle";
+        native_window_ = native_window;
     }
 };
 

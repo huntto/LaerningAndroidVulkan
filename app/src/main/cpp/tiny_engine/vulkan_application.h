@@ -68,6 +68,9 @@ protected:
     std::vector<const char *> layers_;
     VkInstance instance_ = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT debug_messenger_ = VK_NULL_HANDLE;
+
+    void *native_window_ = nullptr;
+    VkSurfaceKHR surface_ = VK_NULL_HANDLE;
 };
 
 } //namespace tiny_engine
