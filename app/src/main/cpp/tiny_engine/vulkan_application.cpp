@@ -1,6 +1,7 @@
 #include "vulkan_application.h"
 
 #include <vulkan/vulkan_android.h>
+#include <android/native_window.h>
 #include <set>
 #include <string>
 
@@ -13,7 +14,7 @@ void VulkanApplication::Init() {
     CreateDebugMessenger();
     CreateSurface();
     CreateDevice();
-    CreateSwapChain();
+    CreateSwapchain();
     CreateGraphicsPipeline();
     CreateShaderModules();
     CreateRenderPass();
@@ -36,6 +37,7 @@ void VulkanApplication::Init() {
 void VulkanApplication::Draw() {}
 
 void VulkanApplication::Cleanup() {
+    vkDestroySwapchainKHR(device_, swapchain_, nullptr);
     vkDestroyDevice(device_, nullptr);
     vkDestroySurfaceKHR(instance_, surface_, nullptr);
     DestroyDebugMessenger();
@@ -149,7 +151,62 @@ void VulkanApplication::CreateDevice() {
     }
 }
 
-void VulkanApplication::CreateSwapChain() {}
+void VulkanApplication::CreateSwapchain() {
+    SwapChainSupportDetails support_details = QuerySwapChainSupport(physical_device_, surface_);
+    VkSurfaceFormatKHR surface_format = ChooseSwapSurfaceFormat(support_details.formats);
+    VkPresentModeKHR present_mode = ChooseSwapPresentMode(support_details.present_modes);
+    VkExtent2D extent = ChooseSwapExtent(support_details.capabilities);
+
+    uint32_t image_count = support_details.capabilities.minImageCount + 1;
+    if (support_details.capabilities.maxImageCount > 0
+        && image_count > support_details.capabilities.maxImageCount) {
+        image_count = support_details.capabilities.maxImageCount;
+    }
+
+    VkSwapchainCreateInfoKHR create_info{};
+    create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    create_info.surface = surface_;
+
+    create_info.minImageCount = image_count;
+    create_info.imageFormat = surface_format.format;
+    create_info.imageColorSpace = surface_format.colorSpace;
+    create_info.imageExtent = extent;
+    create_info.imageArrayLayers = 1;
+    create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    QueueFamilyIndices indices = FindQueueFamilies(physical_device_, surface_);
+    uint32_t queue_family_indices[] = {
+            static_cast<uint32_t>(indices.graphics_family),
+            static_cast<uint32_t>(indices.present_family)
+    };
+
+    if (indices.graphics_family != indices.present_family) {
+        create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        create_info.queueFamilyIndexCount = 2;
+        create_info.pQueueFamilyIndices = queue_family_indices;
+    } else {
+        create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    }
+
+    create_info.preTransform = support_details.capabilities.currentTransform;
+    create_info.compositeAlpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+    create_info.presentMode = present_mode;
+    create_info.clipped = VK_TRUE;
+
+    create_info.oldSwapchain = VK_NULL_HANDLE;
+
+    if (vkCreateSwapchainKHR(device_, &create_info, nullptr, &swapchain_) != VK_SUCCESS
+        || swapchain_ == VK_NULL_HANDLE) {
+        throw std::runtime_error("failed to create swap chain!");
+    }
+
+    vkGetSwapchainImagesKHR(device_, swapchain_, &image_count, nullptr);
+    swapchain_images_.resize(image_count);
+    vkGetSwapchainImagesKHR(device_, swapchain_, &image_count, swapchain_images_.data());
+
+    swapchain_image_format_ = surface_format.format;
+    swapchain_extent_ = extent;
+}
 
 void VulkanApplication::CreateGraphicsPipeline() {}
 
@@ -316,6 +373,48 @@ VulkanApplication::QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR s
                                                   details.present_modes.data());
     }
     return details;
+}
+
+VkSurfaceFormatKHR VulkanApplication::ChooseSwapSurfaceFormat(
+        const std::vector<VkSurfaceFormatKHR> &available_formats) {
+    for (const auto &available_format : available_formats) {
+        if (available_format.format == VK_FORMAT_B8G8R8A8_SRGB
+            && available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            return available_format;
+        }
+    }
+
+    return available_formats[0];
+}
+
+VkPresentModeKHR VulkanApplication::ChooseSwapPresentMode(
+        const std::vector<VkPresentModeKHR> &available_present_modes) {
+    for (const auto &available_present_mode : available_present_modes) {
+        if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR) {
+            return available_present_mode;
+        }
+    }
+
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkExtent2D VulkanApplication::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
+    if (capabilities.currentExtent.width != UINT32_MAX) {
+        return capabilities.currentExtent;
+    } else {
+        uint32_t width = ANativeWindow_getWidth(static_cast<ANativeWindow *>(native_window_));
+        uint32_t height = ANativeWindow_getHeight(static_cast<ANativeWindow *>(native_window_));
+        VkExtent2D actual_extent = {width, height};
+
+        actual_extent.width = std::max(capabilities.minImageExtent.width,
+                                       std::min(capabilities.maxImageExtent.width,
+                                                actual_extent.width));
+        actual_extent.height = std::max(capabilities.minImageExtent.height,
+                                        std::min(capabilities.maxImageExtent.height,
+                                                 actual_extent.height));
+
+        return actual_extent;
+    }
 }
 
 } // namespace tiny_engine

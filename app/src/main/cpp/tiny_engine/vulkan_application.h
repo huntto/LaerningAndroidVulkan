@@ -39,7 +39,7 @@ protected:
 
     virtual void CreateDevice();
 
-    virtual void CreateSwapChain();
+    virtual void CreateSwapchain();
 
     virtual void CreateGraphicsPipeline();
 
@@ -91,6 +91,14 @@ protected:
     virtual bool CheckDeviceExtensionSupport(VkPhysicalDevice device,
                                              const std::vector<const char *> &extensions);
 
+    virtual VkSurfaceFormatKHR
+    ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &available_formats);
+
+    virtual VkPresentModeKHR
+    ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &available_present_modes);
+
+    virtual VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
+
 protected:
     std::string application_name_;
     std::vector<const char *> extensions_;
@@ -109,6 +117,12 @@ protected:
     VkDevice device_ = VK_NULL_HANDLE;
     VkQueue graphics_queue_ = VK_NULL_HANDLE;
     VkQueue present_queue_ = VK_NULL_HANDLE;
+
+    VkSwapchainKHR swapchain_ = VK_NULL_HANDLE;
+    std::vector<VkImage> swapchain_images_;
+    VkFormat swapchain_image_format_;
+    VkExtent2D swapchain_extent_;
+    std::vector<VkImageView> swapchain_image_views_;
 };
 
 } //namespace tiny_engine
