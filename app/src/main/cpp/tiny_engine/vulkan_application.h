@@ -7,6 +7,21 @@
 
 namespace tiny_engine {
 
+struct QueueFamilyIndices {
+    int32_t graphics_family = -1;
+    int32_t present_family = -1;
+
+    virtual bool IsComplete() {
+        return graphics_family >= 0 && present_family >= 0;
+    }
+};
+
+struct SwapChainSupportDetails {
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> present_modes;
+};
+
 class VulkanApplication {
 public:
     virtual void Init();
@@ -63,14 +78,37 @@ protected:
     virtual void DestroyDebugMessenger();
 
 protected:
+    virtual VkPhysicalDevice PickPhysicalDevice(VkInstance instance,
+                                                const std::vector<const char *> &extensions,
+                                                VkSurfaceKHR surface);
+
+    virtual QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device,
+                                                 VkSurfaceKHR surface);
+
+    virtual SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device,
+                                                          VkSurfaceKHR surface);
+
+    virtual bool CheckDeviceExtensionSupport(VkPhysicalDevice device,
+                                             const std::vector<const char *> &extensions);
+
+protected:
     std::string application_name_;
     std::vector<const char *> extensions_;
     std::vector<const char *> layers_;
+    std::vector<const char *> device_extensions_ = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+
     VkInstance instance_ = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT debug_messenger_ = VK_NULL_HANDLE;
 
     void *native_window_ = nullptr;
     VkSurfaceKHR surface_ = VK_NULL_HANDLE;
+
+    VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
+    VkDevice device_ = VK_NULL_HANDLE;
+    VkQueue graphics_queue_ = VK_NULL_HANDLE;
+    VkQueue present_queue_ = VK_NULL_HANDLE;
 };
 
 } //namespace tiny_engine
