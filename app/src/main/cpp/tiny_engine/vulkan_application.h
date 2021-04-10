@@ -41,6 +41,8 @@ protected:
 
     virtual void CreateSwapchain();
 
+    virtual void CreateSwapchainImageViews();
+
     virtual void CreateGraphicsPipeline();
 
     virtual void CreateShaderModules();
@@ -98,6 +100,9 @@ protected:
     ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &available_present_modes);
 
     virtual VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
+
+    virtual VkImageView CreateImageView(VkDevice device, VkImage image, VkFormat format,
+                                        VkImageAspectFlags aspect_flags);
 
 protected:
     std::string application_name_;

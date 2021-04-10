@@ -15,6 +15,7 @@ void VulkanApplication::Init() {
     CreateSurface();
     CreateDevice();
     CreateSwapchain();
+    CreateSwapchainImageViews();
     CreateGraphicsPipeline();
     CreateShaderModules();
     CreateRenderPass();
@@ -37,6 +38,11 @@ void VulkanApplication::Init() {
 void VulkanApplication::Draw() {}
 
 void VulkanApplication::Cleanup() {
+    for (auto image_view : swapchain_image_views_) {
+        vkDestroyImageView(device_, image_view, nullptr);
+    }
+    swapchain_image_views_.clear();
+
     vkDestroySwapchainKHR(device_, swapchain_, nullptr);
     vkDestroyDevice(device_, nullptr);
     vkDestroySurfaceKHR(instance_, surface_, nullptr);
@@ -206,6 +212,16 @@ void VulkanApplication::CreateSwapchain() {
 
     swapchain_image_format_ = surface_format.format;
     swapchain_extent_ = extent;
+}
+
+void VulkanApplication::CreateSwapchainImageViews() {
+    swapchain_image_views_.resize(swapchain_images_.size());
+    for (size_t i = 0; i < swapchain_images_.size(); i++) {
+        swapchain_image_views_[i] = CreateImageView(device_,
+                                                    swapchain_images_[i],
+                                                    swapchain_image_format_,
+                                                    VK_IMAGE_ASPECT_COLOR_BIT);
+    }
 }
 
 void VulkanApplication::CreateGraphicsPipeline() {}
@@ -415,6 +431,28 @@ VkExtent2D VulkanApplication::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &c
 
         return actual_extent;
     }
+}
+
+VkImageView VulkanApplication::CreateImageView(VkDevice device, VkImage image, VkFormat format,
+                                               VkImageAspectFlags aspect_flags) {
+    VkImageViewCreateInfo create_info{};
+    create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    create_info.image = image;
+    create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    create_info.format = format;
+    create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    create_info.subresourceRange.baseMipLevel = 0;
+    create_info.subresourceRange.levelCount = 1;
+    create_info.subresourceRange.baseArrayLayer = 0;
+    create_info.subresourceRange.layerCount = 1;
+    create_info.subresourceRange.aspectMask = aspect_flags;
+
+    VkImageView image_view = VK_NULL_HANDLE;
+    if (vkCreateImageView(device, &create_info, nullptr, &image_view) != VK_SUCCESS ||
+        image_view == VK_NULL_HANDLE) {
+        throw std::runtime_error("failed to create texture image view!");
+    }
+    return image_view;
 }
 
 } // namespace tiny_engine
