@@ -43,11 +43,11 @@ protected:
 
     virtual void CreateSwapchainImageViews();
 
+    virtual void CreateRenderPass();
+
     virtual void CreateGraphicsPipeline();
 
     virtual void CreateShaderModules();
-
-    virtual void CreateRenderPass();
 
     virtual void CreateFramebuffers();
 
@@ -77,6 +77,8 @@ protected:
 
     virtual void CreateDepthResources();
 
+    virtual void DestroySwapchainImageViews();
+
     virtual void DestroyDebugMessenger();
 
 protected:
@@ -104,6 +106,13 @@ protected:
     virtual VkImageView CreateImageView(VkDevice device, VkImage image, VkFormat format,
                                         VkImageAspectFlags aspect_flags);
 
+    virtual VkFormat FindDepthFormat(VkPhysicalDevice physical_device);
+
+    virtual VkFormat FindSupportedFormat(VkPhysicalDevice physical_device,
+                                         const std::vector<VkFormat> &candidates,
+                                         VkImageTiling tiling,
+                                         VkFormatFeatureFlags features);
+
 protected:
     std::string application_name_;
     std::vector<const char *> extensions_;
@@ -128,6 +137,8 @@ protected:
     VkFormat swapchain_image_format_;
     VkExtent2D swapchain_extent_;
     std::vector<VkImageView> swapchain_image_views_;
+
+    VkRenderPass render_pass_ = VK_NULL_HANDLE;
 };
 
 } //namespace tiny_engine
