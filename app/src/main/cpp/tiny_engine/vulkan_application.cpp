@@ -20,8 +20,9 @@ void VulkanApplication::Init() {
     CreateDescriptorSetLayout();
     CreateShaderModules();
     CreateGraphicsPipeline();
-    CreateFramebuffers();
     CreateCommandPool();
+    CreateDepthResources();
+    CreateFramebuffers();
     CreateCommandBuffers();
     CreateSyncObjects();
     CreateVertexBuffer();
@@ -32,12 +33,12 @@ void VulkanApplication::Init() {
     CreateTextureImage();
     CreateTextureImageView();
     CreateTextureSampler();
-    CreateDepthResources();
 }
 
 void VulkanApplication::Draw() {}
 
 void VulkanApplication::Cleanup() {
+    vkDestroyCommandPool(device_, command_pool_, nullptr);
     vkDestroyPipeline(device_, graphics_pipeline_, nullptr);
     vkDestroyPipelineLayout(device_, pipeline_layout_, nullptr);
     vkDestroyRenderPass(device_, render_pass_, nullptr);
@@ -438,9 +439,22 @@ void VulkanApplication::CreateGraphicsPipeline() {
     }
 }
 
-void VulkanApplication::CreateFramebuffers() {}
+void VulkanApplication::CreateCommandPool() {
+    QueueFamilyIndices queue_family_indices = FindQueueFamilies(physical_device_, surface_);
 
-void VulkanApplication::CreateCommandPool() {}
+    VkCommandPoolCreateInfo pool_info{};
+    pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pool_info.queueFamilyIndex = queue_family_indices.graphics_family;
+    pool_info.flags = 0; // Optional
+
+    if (vkCreateCommandPool(device_, &pool_info, nullptr, &command_pool_) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create command pool!");
+    }
+}
+
+void VulkanApplication::CreateDepthResources() {}
+
+void VulkanApplication::CreateFramebuffers() {}
 
 void VulkanApplication::CreateCommandBuffers() {}
 
@@ -461,8 +475,6 @@ void VulkanApplication::CreateTextureImage() {}
 void VulkanApplication::CreateTextureImageView() {}
 
 void VulkanApplication::CreateTextureSampler() {}
-
-void VulkanApplication::CreateDepthResources() {}
 
 void VulkanApplication::DestroyShaderModules() {
     vkDestroyShaderModule(device_, vert_shader_module_, nullptr);

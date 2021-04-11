@@ -115,7 +115,7 @@ protected:
                                          VkImageTiling tiling,
                                          VkFormatFeatureFlags features);
 
-    VkShaderModule CreateShaderModule(VkDevice device, const std::vector<char> &code);
+    virtual VkShaderModule CreateShaderModule(VkDevice device, const std::vector<char> &code);
 
 protected:
     std::string application_name_;
@@ -153,6 +153,13 @@ protected:
     VkDescriptorSetLayout descriptor_set_layout_ = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout_ = VK_NULL_HANDLE;
     VkPipeline graphics_pipeline_ = VK_NULL_HANDLE;
+
+    VkCommandPool command_pool_ = VK_NULL_HANDLE;
+
+    VkImage depth_image_;
+    VkDeviceMemory depth_image_memory_;
+    VkImageView depth_image_view_;
+    std::vector<VkFramebuffer> framebuffers_;
 };
 
 } //namespace tiny_engine
