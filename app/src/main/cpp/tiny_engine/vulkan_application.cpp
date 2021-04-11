@@ -16,8 +16,8 @@ void VulkanApplication::Init() {
     CreateDevice();
     CreateSwapchain();
     CreateSwapchainImageViews();
-    CreateGraphicsPipeline();
     CreateShaderModules();
+    CreateGraphicsPipeline();
     CreateRenderPass();
     CreateFramebuffers();
     CreateCommandPool();
@@ -39,6 +39,7 @@ void VulkanApplication::Draw() {}
 
 void VulkanApplication::Cleanup() {
     vkDestroyRenderPass(device_, render_pass_, nullptr);
+    DestroyShaderModules();
     DestroySwapchainImageViews();
     vkDestroySwapchainKHR(device_, swapchain_, nullptr);
     vkDestroyDevice(device_, nullptr);
@@ -279,9 +280,12 @@ void VulkanApplication::CreateRenderPass() {
     }
 }
 
-void VulkanApplication::CreateGraphicsPipeline() {}
+void VulkanApplication::CreateShaderModules() {
+    vert_shader_module_ = CreateShaderModule(device_, vert_shader_code_);
+    frag_shader_module_ = CreateShaderModule(device_, frag_shader_code_);
+}
 
-void VulkanApplication::CreateShaderModules() {}
+void VulkanApplication::CreateGraphicsPipeline() {}
 
 void VulkanApplication::CreateFramebuffers() {}
 
@@ -310,6 +314,11 @@ void VulkanApplication::CreateTextureImageView() {}
 void VulkanApplication::CreateTextureSampler() {}
 
 void VulkanApplication::CreateDepthResources() {}
+
+void VulkanApplication::DestroyShaderModules() {
+    vkDestroyShaderModule(device_, vert_shader_module_, nullptr);
+    vkDestroyShaderModule(device_, frag_shader_module_, nullptr);
+}
 
 void VulkanApplication::DestroySwapchainImageViews() {
     for (auto image_view : swapchain_image_views_) {
@@ -543,6 +552,20 @@ VkFormat VulkanApplication::FindSupportedFormat(VkPhysicalDevice physical_device
     }
 
     throw std::runtime_error("failed to find supported format!");
+}
+
+VkShaderModule
+VulkanApplication::CreateShaderModule(VkDevice device, const std::vector<char> &code) {
+    VkShaderModuleCreateInfo create_info{};
+    create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    create_info.codeSize = code.size();
+    create_info.pCode = reinterpret_cast<const uint32_t *>(code.data());
+
+    VkShaderModule shader_module;
+    if (vkCreateShaderModule(device, &create_info, nullptr, &shader_module) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create shader module!");
+    }
+    return shader_module;
 }
 
 } // namespace tiny_engine

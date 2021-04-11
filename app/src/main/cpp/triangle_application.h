@@ -7,7 +7,9 @@
 
 class TriangleApplication : public tiny_engine::VulkanApplication {
 public:
-    TriangleApplication(void *native_window) {
+    TriangleApplication(void *native_window,
+                        std::vector<char> vert_shader_code,
+                        std::vector<char> frag_shader_code) {
         layers_ = {
                 "VK_LAYER_KHRONOS_validation"
         };
@@ -18,6 +20,8 @@ public:
         };
         application_name_ = "Triangle";
         native_window_ = native_window;
+        vert_shader_code_ = vert_shader_code;
+        frag_shader_code_ = frag_shader_code;
     }
 };
 

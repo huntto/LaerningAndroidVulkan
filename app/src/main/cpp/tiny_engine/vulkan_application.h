@@ -77,6 +77,8 @@ protected:
 
     virtual void CreateDepthResources();
 
+    virtual void DestroyShaderModules();
+
     virtual void DestroySwapchainImageViews();
 
     virtual void DestroyDebugMessenger();
@@ -113,6 +115,8 @@ protected:
                                          VkImageTiling tiling,
                                          VkFormatFeatureFlags features);
 
+    VkShaderModule CreateShaderModule(VkDevice device, const std::vector<char> &code);
+
 protected:
     std::string application_name_;
     std::vector<const char *> extensions_;
@@ -120,6 +124,8 @@ protected:
     std::vector<const char *> device_extensions_ = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
+    std::vector<char> vert_shader_code_;
+    std::vector<char> frag_shader_code_;
 
     VkInstance instance_ = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT debug_messenger_ = VK_NULL_HANDLE;
@@ -139,6 +145,8 @@ protected:
     std::vector<VkImageView> swapchain_image_views_;
 
     VkRenderPass render_pass_ = VK_NULL_HANDLE;
+    VkShaderModule vert_shader_module_ = VK_NULL_HANDLE;
+    VkShaderModule frag_shader_module_ = VK_NULL_HANDLE;
 };
 
 } //namespace tiny_engine
