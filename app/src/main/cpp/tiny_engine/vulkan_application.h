@@ -45,13 +45,17 @@ protected:
 
     virtual void CreateRenderPass();
 
-    virtual void CreateGraphicsPipeline();
+    virtual void CreateDescriptorSetLayout();
 
     virtual void CreateShaderModules();
 
-    virtual void CreateFramebuffers();
+    virtual void CreateGraphicsPipeline();
 
     virtual void CreateCommandPool();
+
+    virtual void CreateDepthResources();
+
+    virtual void CreateFramebuffers();
 
     virtual void CreateCommandBuffers();
 
@@ -60,8 +64,6 @@ protected:
     virtual void CreateVertexBuffer();
 
     virtual void CreateIndexBuffer();
-
-    virtual void CreateDescriptorSetLayout();
 
     virtual void CreateUniformBuffers();
 
@@ -75,7 +77,6 @@ protected:
 
     virtual void CreateTextureSampler();
 
-    virtual void CreateDepthResources();
 
     virtual void DestroyShaderModules();
 
@@ -105,7 +106,9 @@ protected:
 
     virtual VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
 
-    virtual VkImageView CreateImageView(VkDevice device, VkImage image, VkFormat format,
+    virtual VkImageView CreateImageView(VkDevice device,
+                                        VkImage image,
+                                        VkFormat format,
                                         VkImageAspectFlags aspect_flags);
 
     virtual VkFormat FindDepthFormat(VkPhysicalDevice physical_device);
@@ -115,7 +118,39 @@ protected:
                                          VkImageTiling tiling,
                                          VkFormatFeatureFlags features);
 
-    virtual VkShaderModule CreateShaderModule(VkDevice device, const std::vector<char> &code);
+    virtual VkShaderModule CreateShaderModule(VkDevice device,
+                                              const std::vector<char> &code);
+
+    virtual void CreateImage(VkPhysicalDevice physical_device,
+                             VkDevice device,
+                             uint32_t width,
+                             uint32_t height,
+                             VkFormat format,
+                             VkImageTiling tiling,
+                             VkImageUsageFlags usage,
+                             VkMemoryPropertyFlags properties,
+                             VkImage &image,
+                             VkDeviceMemory &image_memory);
+
+    virtual uint32_t FindMemoryType(VkPhysicalDevice physical_device,
+                                    uint32_t type_filter,
+                                    VkMemoryPropertyFlags properties);
+
+    virtual void TransitionImageLayout(VkDevice device,
+                                       VkCommandPool command_pool,
+                                       VkQueue graphics_queue,
+                                       VkImage image,
+                                       VkFormat format,
+                                       VkImageLayout old_layout,
+                                       VkImageLayout new_layout);
+
+    virtual VkCommandBuffer BeginSingleTimeCommands(VkDevice device,
+                                                    VkCommandPool command_pool);
+
+    virtual void EndSingleTimeCommands(VkDevice device,
+                                       VkCommandPool command_pool,
+                                       VkQueue graphics_queue,
+                                       VkCommandBuffer command_buffer);
 
 protected:
     std::string application_name_;

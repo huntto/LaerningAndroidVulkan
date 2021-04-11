@@ -38,9 +38,13 @@ void VulkanApplication::Init() {
 void VulkanApplication::Draw() {}
 
 void VulkanApplication::Cleanup() {
+    vkDestroyImageView(device_, depth_image_view_, nullptr);
+    vkDestroyImage(device_, depth_image_, nullptr);
+    vkFreeMemory(device_, depth_image_memory_, nullptr);
     vkDestroyCommandPool(device_, command_pool_, nullptr);
     vkDestroyPipeline(device_, graphics_pipeline_, nullptr);
     vkDestroyPipelineLayout(device_, pipeline_layout_, nullptr);
+    vkDestroyDescriptorSetLayout(device_, descriptor_set_layout_, nullptr);
     vkDestroyRenderPass(device_, render_pass_, nullptr);
     DestroyShaderModules();
     DestroySwapchainImageViews();
@@ -452,7 +456,29 @@ void VulkanApplication::CreateCommandPool() {
     }
 }
 
-void VulkanApplication::CreateDepthResources() {}
+void VulkanApplication::CreateDepthResources() {
+    VkFormat depth_format = FindDepthFormat(physical_device_);
+    CreateImage(physical_device_,
+                device_,
+                swapchain_extent_.width,
+                swapchain_extent_.height,
+                depth_format,
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                depth_image_,
+                depth_image_memory_);
+    depth_image_view_ = CreateImageView(device_, depth_image_, depth_format,
+                                        VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    TransitionImageLayout(device_,
+                          command_pool_,
+                          graphics_queue_,
+                          depth_image_,
+                          depth_format,
+                          VK_IMAGE_LAYOUT_UNDEFINED,
+                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+}
 
 void VulkanApplication::CreateFramebuffers() {}
 
@@ -543,8 +569,8 @@ VkPhysicalDevice VulkanApplication::PickPhysicalDevice(VkInstance instance,
     return physical_device;
 }
 
-QueueFamilyIndices
-VulkanApplication::FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
+QueueFamilyIndices VulkanApplication::FindQueueFamilies(VkPhysicalDevice device,
+                                                        VkSurfaceKHR surface) {
     QueueFamilyIndices indices;
 
     uint32_t queue_family_count = 0;
@@ -594,8 +620,8 @@ bool VulkanApplication::CheckDeviceExtensionSupport(VkPhysicalDevice device,
 }
 
 
-SwapChainSupportDetails
-VulkanApplication::QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
+SwapChainSupportDetails VulkanApplication::QuerySwapChainSupport(VkPhysicalDevice device,
+                                                                 VkSurfaceKHR surface) {
     SwapChainSupportDetails details;
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
@@ -663,14 +689,15 @@ VkExtent2D VulkanApplication::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &c
     }
 }
 
-VkImageView VulkanApplication::CreateImageView(VkDevice device, VkImage image, VkFormat format,
+VkImageView VulkanApplication::CreateImageView(VkDevice device,
+                                               VkImage image,
+                                               VkFormat format,
                                                VkImageAspectFlags aspect_flags) {
     VkImageViewCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     create_info.image = image;
     create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     create_info.format = format;
-    create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     create_info.subresourceRange.baseMipLevel = 0;
     create_info.subresourceRange.levelCount = 1;
     create_info.subresourceRange.baseArrayLayer = 0;
@@ -727,6 +754,173 @@ VulkanApplication::CreateShaderModule(VkDevice device, const std::vector<char> &
         throw std::runtime_error("failed to create shader module!");
     }
     return shader_module;
+}
+
+void VulkanApplication::CreateImage(VkPhysicalDevice physical_device,
+                                    VkDevice device,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    VkFormat format,
+                                    VkImageTiling tiling,
+                                    VkImageUsageFlags usage,
+                                    VkMemoryPropertyFlags properties,
+                                    VkImage &image,
+                                    VkDeviceMemory &image_memory) {
+    VkImageCreateInfo image_create_info{};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.extent.width = width;
+    image_create_info.extent.height = height;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.format = format;
+    image_create_info.tiling = tiling;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = usage;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateImage(device, &image_create_info, nullptr, &image) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create image!");
+    }
+
+    VkMemoryRequirements mem_requirements;
+    vkGetImageMemoryRequirements(device, image, &mem_requirements);
+
+    VkMemoryAllocateInfo memory_alloc_info{};
+    memory_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memory_alloc_info.allocationSize = mem_requirements.size;
+    memory_alloc_info.memoryTypeIndex = FindMemoryType(physical_device,
+                                                       mem_requirements.memoryTypeBits,
+                                                       properties);
+
+    if (vkAllocateMemory(device, &memory_alloc_info, nullptr, &image_memory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate image memory!");
+    }
+
+    vkBindImageMemory(device, image, image_memory, 0);
+}
+
+
+uint32_t VulkanApplication::FindMemoryType(VkPhysicalDevice physical_device,
+                                           uint32_t type_filter,
+                                           VkMemoryPropertyFlags properties) {
+    VkPhysicalDeviceMemoryProperties memory_properties;
+    vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
+    for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
+        if (type_filter & (1 << i) &&
+            (memory_properties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+    throw std::runtime_error("failed to find suitable memory type!");
+}
+
+void VulkanApplication::TransitionImageLayout(VkDevice device,
+                                              VkCommandPool command_pool,
+                                              VkQueue graphics_queue,
+                                              VkImage image,
+                                              VkFormat format,
+                                              VkImageLayout old_layout,
+                                              VkImageLayout new_layout) {
+    VkCommandBuffer command_buffer = BeginSingleTimeCommands(device, command_pool);
+
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = old_layout;
+    barrier.newLayout = new_layout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = image;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+
+    VkPipelineStageFlags source_stage;
+    VkPipelineStageFlags destination_stage;
+
+    if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED &&
+        new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+        source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    } else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
+               new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED &&
+               new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+        barrier.subresourceRange.aspectMask =
+                VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+        source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destination_stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    } else {
+        throw std::invalid_argument("unsupported layout transition!");
+    }
+
+    vkCmdPipelineBarrier(
+            command_buffer,
+            source_stage,
+            destination_stage,
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &barrier
+    );
+
+    EndSingleTimeCommands(device, command_pool, graphics_queue, command_buffer);
+}
+
+VkCommandBuffer VulkanApplication::BeginSingleTimeCommands(VkDevice device,
+                                                           VkCommandPool command_pool) {
+    VkCommandBufferAllocateInfo alloc_info{};
+    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.commandPool = command_pool;
+    alloc_info.commandBufferCount = 1;
+
+    VkCommandBuffer command_buffer;
+    vkAllocateCommandBuffers(device_, &alloc_info, &command_buffer);
+
+    VkCommandBufferBeginInfo begin_info{};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(command_buffer, &begin_info);
+
+    return command_buffer;
+}
+
+void VulkanApplication::EndSingleTimeCommands(VkDevice device,
+                                              VkCommandPool command_pool,
+                                              VkQueue graphics_queue,
+                                              VkCommandBuffer command_buffer) {
+    vkEndCommandBuffer(command_buffer);
+
+    VkSubmitInfo submit_info{};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffer;
+
+    vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(graphics_queue);
+
+    vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
 }
 
 } // namespace tiny_engine
