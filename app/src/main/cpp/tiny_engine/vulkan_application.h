@@ -77,6 +77,7 @@ protected:
 
     virtual void CreateTextureSampler();
 
+    virtual void DestroyFramebuffers();
 
     virtual void DestroyShaderModules();
 
@@ -194,6 +195,7 @@ protected:
     VkImage depth_image_;
     VkDeviceMemory depth_image_memory_;
     VkImageView depth_image_view_;
+
     std::vector<VkFramebuffer> framebuffers_;
 };
 

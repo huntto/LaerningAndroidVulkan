@@ -4,6 +4,7 @@
 #include <android/native_window.h>
 #include <set>
 #include <string>
+#include <array>
 
 #include "log.h"
 
@@ -38,6 +39,7 @@ void VulkanApplication::Init() {
 void VulkanApplication::Draw() {}
 
 void VulkanApplication::Cleanup() {
+    DestroyFramebuffers();
     vkDestroyImageView(device_, depth_image_view_, nullptr);
     vkDestroyImage(device_, depth_image_, nullptr);
     vkFreeMemory(device_, depth_image_memory_, nullptr);
@@ -480,7 +482,31 @@ void VulkanApplication::CreateDepthResources() {
                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
-void VulkanApplication::CreateFramebuffers() {}
+void VulkanApplication::CreateFramebuffers() {
+    framebuffers_.resize(swapchain_image_views_.size());
+    for (size_t i = 0; i < swapchain_image_views_.size(); i++) {
+        std::array<VkImageView, 2> attachments = {
+                swapchain_image_views_[i],
+                depth_image_view_
+        };
+
+        VkFramebufferCreateInfo framebuffer_create_info{};
+        framebuffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebuffer_create_info.renderPass = render_pass_;
+        framebuffer_create_info.attachmentCount = static_cast<uint32_t>(attachments.size());
+        framebuffer_create_info.pAttachments = attachments.data();
+        framebuffer_create_info.width = swapchain_extent_.width;
+        framebuffer_create_info.height = swapchain_extent_.height;
+        framebuffer_create_info.layers = 1;
+
+        framebuffers_[i] = VK_NULL_HANDLE;
+        if (vkCreateFramebuffer(device_, &framebuffer_create_info, nullptr,
+                                &framebuffers_[i]) != VK_SUCCESS
+            || framebuffers_[i] == VK_NULL_HANDLE) {
+            throw std::runtime_error("failed to create framebuffer!");
+        }
+    }
+}
 
 void VulkanApplication::CreateCommandBuffers() {}
 
@@ -501,6 +527,13 @@ void VulkanApplication::CreateTextureImage() {}
 void VulkanApplication::CreateTextureImageView() {}
 
 void VulkanApplication::CreateTextureSampler() {}
+
+void VulkanApplication::DestroyFramebuffers() {
+    for (auto framebuffer : framebuffers_) {
+        vkDestroyFramebuffer(device_, framebuffer, nullptr);
+    }
+    framebuffers_.clear();
+}
 
 void VulkanApplication::DestroyShaderModules() {
     vkDestroyShaderModule(device_, vert_shader_module_, nullptr);
