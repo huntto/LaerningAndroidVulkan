@@ -5,6 +5,9 @@ project("tiny_engine")
 add_library(VkLayer_khronos_validation-lib
         SHARED
         IMPORTED)
+
+include_directories(third_party/glm)
+
 set_target_properties(VkLayer_khronos_validation-lib
         PROPERTIES IMPORTED_LOCATION
         ${CMAKE_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libVkLayer_khronos_validation.so)
