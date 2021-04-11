@@ -126,6 +126,8 @@ protected:
     };
     std::vector<char> vert_shader_code_;
     std::vector<char> frag_shader_code_;
+    std::vector<VkVertexInputBindingDescription> binding_descriptions_;
+    std::vector<VkVertexInputAttributeDescription> attribute_descriptions_;
 
     VkInstance instance_ = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT debug_messenger_ = VK_NULL_HANDLE;
@@ -147,6 +149,10 @@ protected:
     VkRenderPass render_pass_ = VK_NULL_HANDLE;
     VkShaderModule vert_shader_module_ = VK_NULL_HANDLE;
     VkShaderModule frag_shader_module_ = VK_NULL_HANDLE;
+
+    VkDescriptorSetLayout descriptor_set_layout_ = VK_NULL_HANDLE;
+    VkPipelineLayout pipeline_layout_ = VK_NULL_HANDLE;
+    VkPipeline graphics_pipeline_ = VK_NULL_HANDLE;
 };
 
 } //namespace tiny_engine
