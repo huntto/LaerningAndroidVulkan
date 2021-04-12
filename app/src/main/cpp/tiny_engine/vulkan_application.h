@@ -217,6 +217,9 @@ protected:
 
     VkBuffer vertex_buffer_ = VK_NULL_HANDLE;
     VkDeviceMemory vertex_buffer_memory_ = VK_NULL_HANDLE;
+
+    VkBuffer index_buffer_ = VK_NULL_HANDLE;
+    VkDeviceMemory index_buffer_memory_ = VK_NULL_HANDLE;
 };
 
 } //namespace tiny_engine

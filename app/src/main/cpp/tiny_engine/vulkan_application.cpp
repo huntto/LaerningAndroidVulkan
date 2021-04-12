@@ -39,6 +39,8 @@ void VulkanApplication::Init() {
 void VulkanApplication::Draw() {}
 
 void VulkanApplication::Cleanup() {
+    vkDestroyBuffer(device_, index_buffer_, nullptr);
+    vkFreeMemory(device_, index_buffer_memory_, nullptr);
     vkDestroyBuffer(device_, vertex_buffer_, nullptr);
     vkFreeMemory(device_, vertex_buffer_memory_, nullptr);
     DestroyFramebuffers();
