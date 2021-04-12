@@ -39,6 +39,8 @@ void VulkanApplication::Init() {
 void VulkanApplication::Draw() {}
 
 void VulkanApplication::Cleanup() {
+    vkDestroyBuffer(device_, vertex_buffer_, nullptr);
+    vkFreeMemory(device_, vertex_buffer_memory_, nullptr);
     DestroyFramebuffers();
     vkDestroyImageView(device_, depth_image_view_, nullptr);
     vkDestroyImage(device_, depth_image_, nullptr);
@@ -952,6 +954,76 @@ void VulkanApplication::EndSingleTimeCommands(VkDevice device,
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &command_buffer;
 
+    vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(graphics_queue);
+
+    vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
+}
+
+void VulkanApplication::CreateBuffer(VkPhysicalDevice physical_device,
+                                     VkDevice device,
+                                     VkDeviceSize size,
+                                     VkBufferUsageFlags usage,
+                                     VkMemoryPropertyFlags properties,
+                                     VkBuffer &buffer,
+                                     VkDeviceMemory &buffer_memory) {
+    VkBufferCreateInfo buffer_create_info{};
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.size = size;
+    buffer_create_info.usage = usage;
+    buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    if (vkCreateBuffer(device, &buffer_create_info, nullptr, &buffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create vertex buffer!");
+    }
+
+    VkMemoryRequirements mem_requirements;
+    vkGetBufferMemoryRequirements(device, buffer, &mem_requirements);
+
+    VkMemoryAllocateInfo alloc_info{};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = mem_requirements.size;
+    alloc_info.memoryTypeIndex = FindMemoryType(physical_device, mem_requirements.memoryTypeBits,
+                                                properties);
+
+    if (vkAllocateMemory(device, &alloc_info, nullptr, &buffer_memory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate vertex buffer memory!");
+    }
+    vkBindBufferMemory(device, buffer, buffer_memory, 0);
+}
+
+void VulkanApplication::CopyBuffer(VkDevice device,
+                                   VkCommandPool command_pool,
+                                   VkQueue graphics_queue,
+                                   VkBuffer src_buffer,
+                                   VkBuffer dst_buffer,
+                                   VkDeviceSize size) {
+    VkCommandBufferAllocateInfo alloc_info{};
+    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.commandPool = command_pool;
+    alloc_info.commandBufferCount = 1;
+
+    VkCommandBuffer command_buffer;
+    vkAllocateCommandBuffers(device, &alloc_info, &command_buffer);
+
+    VkCommandBufferBeginInfo begin_info{};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(command_buffer, &begin_info);
+
+    VkBufferCopy copy_region{};
+    copy_region.srcOffset = 0; // Optional
+    copy_region.dstOffset = 0; // Optional
+    copy_region.size = size;
+    vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
+
+    vkEndCommandBuffer(command_buffer);
+
+    VkSubmitInfo submit_info{};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffer;
     vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
     vkQueueWaitIdle(graphics_queue);
 

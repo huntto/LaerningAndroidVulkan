@@ -155,6 +155,21 @@ protected:
                                        VkQueue graphics_queue,
                                        VkCommandBuffer command_buffer);
 
+    virtual void CreateBuffer(VkPhysicalDevice physical_device,
+                              VkDevice device,
+                              VkDeviceSize size,
+                              VkBufferUsageFlags usage,
+                              VkMemoryPropertyFlags properties,
+                              VkBuffer &buffer,
+                              VkDeviceMemory &buffer_memory);
+
+    virtual void CopyBuffer(VkDevice device,
+                            VkCommandPool command_pool,
+                            VkQueue graphics_queue,
+                            VkBuffer src_buffer,
+                            VkBuffer dst_buffer,
+                            VkDeviceSize size);
+
 protected:
     std::string application_name_;
     std::vector<const char *> extensions_;
@@ -199,6 +214,9 @@ protected:
     VkImageView depth_image_view_;
 
     std::vector<VkFramebuffer> framebuffers_;
+
+    VkBuffer vertex_buffer_ = VK_NULL_HANDLE;
+    VkDeviceMemory vertex_buffer_memory_ = VK_NULL_HANDLE;
 };
 
 } //namespace tiny_engine

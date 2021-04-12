@@ -2,15 +2,17 @@ cmake_minimum_required(VERSION 3.10.2)
 
 project("tiny_engine")
 
+add_definitions(-std=c++14)
+
 add_library(VkLayer_khronos_validation-lib
         SHARED
         IMPORTED)
 
-include_directories(third_party/glm)
-
 set_target_properties(VkLayer_khronos_validation-lib
         PROPERTIES IMPORTED_LOCATION
         ${CMAKE_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libVkLayer_khronos_validation.so)
+
+include_directories(third_party/glm)
 
 add_library(native-lib
         SHARED

@@ -4,6 +4,9 @@
 #include "tiny_engine/vulkan_application.h"
 
 #include <vulkan/vulkan_android.h>
+#include <vector>
+#define GLM_FORCE_RADIANS
+#define GLM_LANG_STL11_FORCED
 #include <glm/glm.hpp>
 
 struct Vertex {
@@ -40,22 +43,17 @@ class TriangleApplication : public tiny_engine::VulkanApplication {
 public:
     TriangleApplication(void *native_window,
                         std::vector<char> vert_shader_code,
-                        std::vector<char> frag_shader_code) {
-        layers_ = {
-                "VK_LAYER_KHRONOS_validation"
-        };
-        extensions_ = {
-                VK_KHR_SURFACE_EXTENSION_NAME,
-                VK_KHR_ANDROID_SURFACE_EXTENSION_NAME,
-                VK_EXT_DEBUG_UTILS_EXTENSION_NAME
-        };
-        application_name_ = "Triangle";
-        native_window_ = native_window;
-        vert_shader_code_ = vert_shader_code;
-        frag_shader_code_ = frag_shader_code;
-        binding_descriptions_ = Vertex::GetBindingDescription();
-        attribute_descriptions_ = Vertex::GetAttributeDescriptions();
-    }
+                        std::vector<char> frag_shader_code);
+
+protected:
+    virtual void CreateVertexBuffer() override;
+
+private:
+    const std::vector<Vertex> vertices_ = {
+            {{0.0f,  -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+            {{0.5f,  0.5f,  0.0f}, {0.0f, 1.0f, 0.0f}},
+            {{-0.5f, 0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}}
+    };
 };
 
 
