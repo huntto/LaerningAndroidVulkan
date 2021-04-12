@@ -168,7 +168,9 @@ void VulkanApplication::CreateSwapchain() {
     SwapChainSupportDetails support_details = QuerySwapChainSupport(physical_device_, surface_);
     VkSurfaceFormatKHR surface_format = ChooseSwapSurfaceFormat(support_details.formats);
     VkPresentModeKHR present_mode = ChooseSwapPresentMode(support_details.present_modes);
-    VkExtent2D extent = ChooseSwapExtent(support_details.capabilities);
+    uint32_t window_width = ANativeWindow_getWidth(static_cast<ANativeWindow *>(native_window_));
+    uint32_t window_height = ANativeWindow_getHeight(static_cast<ANativeWindow *>(native_window_));
+    VkExtent2D extent = ChooseSwapExtent(support_details.capabilities, window_width, window_height);
 
     uint32_t image_count = support_details.capabilities.minImageCount + 1;
     if (support_details.capabilities.maxImageCount > 0
@@ -703,13 +705,13 @@ VkPresentModeKHR VulkanApplication::ChooseSwapPresentMode(
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D VulkanApplication::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
+VkExtent2D VulkanApplication::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities,
+                                               uint32_t window_width,
+                                               uint32_t window_height) {
     if (capabilities.currentExtent.width != UINT32_MAX) {
         return capabilities.currentExtent;
     } else {
-        uint32_t width = ANativeWindow_getWidth(static_cast<ANativeWindow *>(native_window_));
-        uint32_t height = ANativeWindow_getHeight(static_cast<ANativeWindow *>(native_window_));
-        VkExtent2D actual_extent = {width, height};
+        VkExtent2D actual_extent = {window_width, window_height};
 
         actual_extent.width = std::max(capabilities.minImageExtent.width,
                                        std::min(capabilities.maxImageExtent.width,
@@ -928,7 +930,7 @@ VkCommandBuffer VulkanApplication::BeginSingleTimeCommands(VkDevice device,
     alloc_info.commandBufferCount = 1;
 
     VkCommandBuffer command_buffer;
-    vkAllocateCommandBuffers(device_, &alloc_info, &command_buffer);
+    vkAllocateCommandBuffers(device, &alloc_info, &command_buffer);
 
     VkCommandBufferBeginInfo begin_info{};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

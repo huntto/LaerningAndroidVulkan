@@ -105,7 +105,9 @@ protected:
     virtual VkPresentModeKHR
     ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &available_present_modes);
 
-    virtual VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
+    virtual VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities,
+                                        uint32_t window_width,
+                                        uint32_t window_height);
 
     virtual VkImageView CreateImageView(VkDevice device,
                                         VkImage image,
