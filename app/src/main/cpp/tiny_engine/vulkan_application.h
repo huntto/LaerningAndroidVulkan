@@ -77,6 +77,8 @@ protected:
 
     virtual void CreateTextureSampler();
 
+    virtual void DestroyUniformBuffers();
+
     virtual void DestroyFramebuffers();
 
     virtual void DestroyShaderModules();
@@ -220,6 +222,9 @@ protected:
 
     VkBuffer index_buffer_ = VK_NULL_HANDLE;
     VkDeviceMemory index_buffer_memory_ = VK_NULL_HANDLE;
+
+    std::vector<VkBuffer> uniform_buffers_;
+    std::vector<VkDeviceMemory> uniform_buffers_memory_;
 };
 
 } //namespace tiny_engine

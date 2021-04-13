@@ -91,3 +91,20 @@ void TriangleApplication::CreateIndexBuffer() {
     vkDestroyBuffer(device_, staging_buffer, nullptr);
     vkFreeMemory(device_, staging_buffer_memory, nullptr);
 }
+
+void TriangleApplication::CreateUniformBuffers() {
+    VkDeviceSize buffer_size = sizeof(UniformBufferObject);
+
+    uniform_buffers_.resize(swapchain_images_.size());
+    uniform_buffers_memory_.resize(swapchain_images_.size());
+
+    for (size_t i = 0; i < swapchain_images_.size(); i++) {
+        CreateBuffer(physical_device_,
+                     device_,
+                     buffer_size,
+                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     uniform_buffers_[i],
+                     uniform_buffers_memory_[i]);
+    }
+}

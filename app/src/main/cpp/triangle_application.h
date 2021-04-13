@@ -39,6 +39,12 @@ struct Vertex {
     }
 };
 
+struct UniformBufferObject {
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
+
 class TriangleApplication : public tiny_engine::VulkanApplication {
 public:
     TriangleApplication(void *native_window,
@@ -49,6 +55,8 @@ protected:
     virtual void CreateVertexBuffer() override;
 
     virtual void CreateIndexBuffer() override;
+
+    virtual void CreateUniformBuffers() override;
 
 private:
     std::vector<Vertex> vertices_ = {

@@ -39,6 +39,7 @@ void VulkanApplication::Init() {
 void VulkanApplication::Draw() {}
 
 void VulkanApplication::Cleanup() {
+    DestroyUniformBuffers();
     vkDestroyBuffer(device_, index_buffer_, nullptr);
     vkFreeMemory(device_, index_buffer_memory_, nullptr);
     vkDestroyBuffer(device_, vertex_buffer_, nullptr);
@@ -533,6 +534,15 @@ void VulkanApplication::CreateTextureImage() {}
 void VulkanApplication::CreateTextureImageView() {}
 
 void VulkanApplication::CreateTextureSampler() {}
+
+void VulkanApplication::DestroyUniformBuffers() {
+    for (size_t i = 0; i < uniform_buffers_.size(); i++) {
+        vkDestroyBuffer(device_, uniform_buffers_[i], nullptr);
+        vkFreeMemory(device_, uniform_buffers_memory_[i], nullptr);
+    }
+    uniform_buffers_.clear();
+    uniform_buffers_memory_.clear();
+}
 
 void VulkanApplication::DestroyFramebuffers() {
     for (auto framebuffer : framebuffers_) {
