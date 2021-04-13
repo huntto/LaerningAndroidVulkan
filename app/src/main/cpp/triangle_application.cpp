@@ -1,4 +1,5 @@
 #include "triangle_application.h"
+#include "tiny_engine/log.h"
 
 TriangleApplication::TriangleApplication(void *native_window, std::vector<char> vert_shader_code,
                                          std::vector<char> frag_shader_code) {
@@ -106,5 +107,21 @@ void TriangleApplication::CreateUniformBuffers() {
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      uniform_buffers_[i],
                      uniform_buffers_memory_[i]);
+    }
+}
+
+void TriangleApplication::CreateDescriptorPool() {
+    std::vector<VkDescriptorPoolSize> pool_sizes(1);
+    pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    pool_sizes[0].descriptorCount = static_cast<uint32_t>(swapchain_images_.size());
+
+    VkDescriptorPoolCreateInfo pool_create_info{};
+    pool_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_create_info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
+    pool_create_info.pPoolSizes = pool_sizes.data();
+    pool_create_info.maxSets = static_cast<uint32_t>(swapchain_images_.size());
+    if (vkCreateDescriptorPool(device_, &pool_create_info, nullptr, &descriptor_pool_) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool!");
     }
 }

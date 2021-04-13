@@ -58,6 +58,8 @@ protected:
 
     virtual void CreateUniformBuffers() override;
 
+    virtual void CreateDescriptorPool() override;
+
 private:
     std::vector<Vertex> vertices_ = {
             {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
