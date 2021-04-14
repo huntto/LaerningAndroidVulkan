@@ -39,8 +39,6 @@ void VulkanApplication::Init() {
 void VulkanApplication::Draw() {}
 
 void VulkanApplication::Cleanup() {
-    vkFreeDescriptorSets(device_, descriptor_pool_, descriptor_sets_.size(),
-                         descriptor_sets_.data());
     vkDestroyDescriptorPool(device_, descriptor_pool_, nullptr);
     DestroyUniformBuffers();
     vkDestroyBuffer(device_, index_buffer_, nullptr);
