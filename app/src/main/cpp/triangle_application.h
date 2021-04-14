@@ -52,6 +52,8 @@ public:
                         std::vector<char> frag_shader_code);
 
 protected:
+    virtual void CreateDescriptorSetLayout() override;
+
     virtual void CreateVertexBuffer() override;
 
     virtual void CreateIndexBuffer() override;
@@ -59,6 +61,8 @@ protected:
     virtual void CreateUniformBuffers() override;
 
     virtual void CreateDescriptorPool() override;
+
+    virtual void CreateDescriptorSets() override;
 
 private:
     std::vector<Vertex> vertices_ = {

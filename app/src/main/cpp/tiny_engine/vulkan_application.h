@@ -227,6 +227,8 @@ protected:
     std::vector<VkDeviceMemory> uniform_buffers_memory_;
 
     VkDescriptorPool descriptor_pool_ = VK_NULL_HANDLE;
+
+    std::vector<VkDescriptorSet> descriptor_sets_;
 };
 
 } //namespace tiny_engine

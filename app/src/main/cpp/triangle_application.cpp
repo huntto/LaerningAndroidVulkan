@@ -1,4 +1,7 @@
 #include "triangle_application.h"
+
+#include <array>
+
 #include "tiny_engine/log.h"
 
 TriangleApplication::TriangleApplication(void *native_window, std::vector<char> vert_shader_code,
@@ -17,6 +20,27 @@ TriangleApplication::TriangleApplication(void *native_window, std::vector<char> 
     frag_shader_code_ = frag_shader_code;
     binding_descriptions_ = Vertex::GetBindingDescription();
     attribute_descriptions_ = Vertex::GetAttributeDescriptions();
+}
+
+void TriangleApplication::CreateDescriptorSetLayout() {
+    VkDescriptorSetLayoutBinding ubo_layout_binding{};
+    ubo_layout_binding.binding = 0;
+    ubo_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    ubo_layout_binding.descriptorCount = 1;
+    ubo_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    ubo_layout_binding.pImmutableSamplers = nullptr;
+
+    std::array<VkDescriptorSetLayoutBinding, 1> bindings = {ubo_layout_binding};
+
+    VkDescriptorSetLayoutCreateInfo layout_create_info{};
+    layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layout_create_info.bindingCount = static_cast<uint32_t>(bindings.size());
+    layout_create_info.pBindings = bindings.data();
+    if (vkCreateDescriptorSetLayout(device_, &layout_create_info, nullptr,
+                                    &descriptor_set_layout_) != VK_SUCCESS ||
+        descriptor_set_layout_ == VK_NULL_HANDLE) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
 }
 
 void TriangleApplication::CreateVertexBuffer() {
@@ -111,7 +135,7 @@ void TriangleApplication::CreateUniformBuffers() {
 }
 
 void TriangleApplication::CreateDescriptorPool() {
-    std::vector<VkDescriptorPoolSize> pool_sizes(1);
+    std::array<VkDescriptorPoolSize, 1> pool_sizes;
     pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     pool_sizes[0].descriptorCount = static_cast<uint32_t>(swapchain_images_.size());
 
@@ -123,5 +147,39 @@ void TriangleApplication::CreateDescriptorPool() {
     if (vkCreateDescriptorPool(device_, &pool_create_info, nullptr, &descriptor_pool_) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
+    }
+}
+
+void TriangleApplication::CreateDescriptorSets() {
+    std::vector<VkDescriptorSetLayout> layouts(swapchain_images_.size(), descriptor_set_layout_);
+    VkDescriptorSetAllocateInfo alloc_info{};
+    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    alloc_info.descriptorPool = descriptor_pool_;
+    alloc_info.descriptorSetCount = static_cast<uint32_t>(swapchain_images_.size());
+    alloc_info.pSetLayouts = layouts.data();
+
+    descriptor_sets_.resize(swapchain_images_.size());
+    if (vkAllocateDescriptorSets(device_, &alloc_info, descriptor_sets_.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor sets!");
+    }
+
+    for (size_t i = 0; i < swapchain_images_.size(); i++) {
+        VkDescriptorBufferInfo buffer_info{};
+        buffer_info.buffer = uniform_buffers_[i];
+        buffer_info.offset = 0;
+        buffer_info.range = sizeof(UniformBufferObject);
+
+        std::array<VkWriteDescriptorSet, 1> descriptor_writes{};
+
+        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[0].dstSet = descriptor_sets_[i];
+        descriptor_writes[0].dstBinding = 0;
+        descriptor_writes[0].dstArrayElement = 0;
+        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_writes[0].descriptorCount = 1;
+        descriptor_writes[0].pBufferInfo = &buffer_info;
+
+        vkUpdateDescriptorSets(device_, static_cast<uint32_t>(descriptor_writes.size()),
+                               descriptor_writes.data(), 0, nullptr);
     }
 }
