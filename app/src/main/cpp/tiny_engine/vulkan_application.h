@@ -59,8 +59,6 @@ protected:
 
     virtual void CreateCommandBuffers();
 
-    virtual void CreateSyncObjects();
-
     virtual void CreateVertexBuffer();
 
     virtual void CreateIndexBuffer();
@@ -76,6 +74,10 @@ protected:
     virtual void CreateTextureImageView();
 
     virtual void CreateTextureSampler();
+
+    virtual void CreateSyncObjects();
+
+    virtual void DestroySyncObjects();
 
     virtual void DestroyUniformBuffers();
 
@@ -229,6 +231,12 @@ protected:
     VkDescriptorPool descriptor_pool_ = VK_NULL_HANDLE;
 
     std::vector<VkDescriptorSet> descriptor_sets_;
+
+    std::vector<VkSemaphore> image_available_semaphores_;
+    std::vector<VkSemaphore> render_finished_semaphores_;
+    std::vector<VkFence> in_flight_fences_;
+    std::vector<VkFence> images_in_flight_;
+    uint32_t max_frames_in_flight_ = 2;
 };
 
 } //namespace tiny_engine

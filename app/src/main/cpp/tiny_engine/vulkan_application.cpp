@@ -25,7 +25,6 @@ void VulkanApplication::Init() {
     CreateDepthResources();
     CreateFramebuffers();
     CreateCommandBuffers();
-    CreateSyncObjects();
     CreateVertexBuffer();
     CreateIndexBuffer();
     CreateUniformBuffers();
@@ -34,11 +33,13 @@ void VulkanApplication::Init() {
     CreateTextureImage();
     CreateTextureImageView();
     CreateTextureSampler();
+    CreateSyncObjects();
 }
 
 void VulkanApplication::Draw() {}
 
 void VulkanApplication::Cleanup() {
+    DestroySyncObjects();
     vkDestroyDescriptorPool(device_, descriptor_pool_, nullptr);
     DestroyUniformBuffers();
     vkDestroyBuffer(device_, index_buffer_, nullptr);
@@ -491,8 +492,6 @@ void VulkanApplication::CreateFramebuffers() {
 
 void VulkanApplication::CreateCommandBuffers() {}
 
-void VulkanApplication::CreateSyncObjects() {}
-
 void VulkanApplication::CreateVertexBuffer() {}
 
 void VulkanApplication::CreateIndexBuffer() {}
@@ -508,6 +507,43 @@ void VulkanApplication::CreateTextureImage() {}
 void VulkanApplication::CreateTextureImageView() {}
 
 void VulkanApplication::CreateTextureSampler() {}
+
+void VulkanApplication::CreateSyncObjects() {
+    image_available_semaphores_.resize(max_frames_in_flight_);
+    render_finished_semaphores_.resize(max_frames_in_flight_);
+    in_flight_fences_.resize(max_frames_in_flight_);
+    images_in_flight_.resize(swapchain_images_.size(), VK_NULL_HANDLE);
+
+    VkSemaphoreCreateInfo semaphore_create_info{};
+    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fence_create_info{};
+    fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    for (size_t i = 0; i < max_frames_in_flight_; i++) {
+        if (vkCreateSemaphore(device_, &semaphore_create_info, nullptr,
+                              &image_available_semaphores_[i]) != VK_SUCCESS ||
+            vkCreateSemaphore(device_, &semaphore_create_info, nullptr,
+                              &render_finished_semaphores_[i]) != VK_SUCCESS ||
+            vkCreateFence(device_, &fence_create_info, nullptr, &in_flight_fences_[i]) !=
+            VK_SUCCESS) {
+            throw std::runtime_error("failed to create synchronization objects for a frame!");
+        }
+    }
+}
+
+void VulkanApplication::DestroySyncObjects() {
+    for (size_t i = 0; i < max_frames_in_flight_; i++) {
+        vkDestroySemaphore(device_, render_finished_semaphores_[i], nullptr);
+        vkDestroySemaphore(device_, image_available_semaphores_[i], nullptr);
+        vkDestroyFence(device_, in_flight_fences_[i], nullptr);
+    }
+    render_finished_semaphores_.clear();
+    image_available_semaphores_.clear();
+    in_flight_fences_.clear();
+    images_in_flight_.clear();
+}
 
 void VulkanApplication::DestroyUniformBuffers() {
     for (size_t i = 0; i < uniform_buffers_.size(); i++) {

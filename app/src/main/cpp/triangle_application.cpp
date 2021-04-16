@@ -20,6 +20,7 @@ TriangleApplication::TriangleApplication(void *native_window, std::vector<char> 
     frag_shader_code_ = frag_shader_code;
     binding_descriptions_ = Vertex::GetBindingDescription();
     attribute_descriptions_ = Vertex::GetAttributeDescriptions();
+    max_frames_in_flight_ = 2;
 }
 
 void TriangleApplication::CreateDescriptorSetLayout() {
