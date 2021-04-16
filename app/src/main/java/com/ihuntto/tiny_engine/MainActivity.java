@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
         surfaceView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
+                Log.d(TAG, "onTouch");
                 draw();
                 return true;
             }
@@ -45,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
         public void surfaceCreated(SurfaceHolder holder) {
             Log.d(TAG, "surfaceCreated");
             init(holder.getSurface());
+            draw();
         }
 
         @Override

@@ -68,6 +68,8 @@ protected:
 
     virtual void CreateCommandBuffers() override;
 
+    virtual void UpdateUniformBuffer(uint32_t current_image);
+
 private:
     std::vector<Vertex> vertices_ = {
             {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
@@ -76,6 +78,7 @@ private:
             {{-0.5f, 0.5f,  0.0f}, {1.0f, 1.0f, 1.0f}}
     };
     std::vector<uint16_t> indices_ = {0, 1, 2, 2, 3, 0};
+    size_t current_frame_ = 0;
 };
 
 

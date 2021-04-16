@@ -1,6 +1,7 @@
 #include "triangle_application.h"
 
 #include <array>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "tiny_engine/log.h"
 
@@ -23,7 +24,73 @@ TriangleApplication::TriangleApplication(void *native_window, std::vector<char> 
     max_frames_in_flight_ = 2;
 }
 
-void TriangleApplication::Draw() {}
+void TriangleApplication::Draw() {
+    vkWaitForFences(device_, 1, &in_flight_fences_[current_frame_], VK_TRUE, UINT64_MAX);
+
+    uint32_t image_index;
+    VkResult result = vkAcquireNextImageKHR(device_, swapchain_, UINT64_MAX,
+                                            image_available_semaphores_[current_frame_],
+                                            VK_NULL_HANDLE,
+                                            &image_index);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        LOGI("RecreateSwapChain cause of VK_ERROR_OUT_OF_DATE_KHR");
+        return;
+    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        throw std::runtime_error("failed to acquire swap chain image!");
+    }
+
+    UpdateUniformBuffer(image_index);
+
+    if (images_in_flight_[image_index] != VK_NULL_HANDLE) {
+        vkWaitForFences(device_, 1, &images_in_flight_[image_index], VK_TRUE, UINT64_MAX);
+    }
+    images_in_flight_[image_index] = in_flight_fences_[current_frame_];
+
+    VkSubmitInfo submit_info{};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    VkSemaphore wait_semaphores[] = {image_available_semaphores_[current_frame_]};
+    VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = wait_semaphores;
+    submit_info.pWaitDstStageMask = wait_stages;
+
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffers_[image_index];
+
+    VkSemaphore signal_semaphores[] = {render_finished_semaphores_[current_frame_]};
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = signal_semaphores;
+
+    vkResetFences(device_, 1, &in_flight_fences_[current_frame_]);
+
+    if (vkQueueSubmit(graphics_queue_, 1, &submit_info, in_flight_fences_[current_frame_]) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to submit draw command buffer!");
+    }
+
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signal_semaphores;
+
+    VkSwapchainKHR swapchains[] = {swapchain_};
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapchains;
+
+    presentInfo.pImageIndices = &image_index;
+
+    result = vkQueuePresentKHR(present_queue_, &presentInfo);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        LOGI("RecreateSwapChain cause of result:%d", result);
+        return;
+    } else if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to present swap chain image!");
+    }
+
+    current_frame_ = (current_frame_ + 1) % max_frames_in_flight_;
+}
 
 void TriangleApplication::CreateDescriptorSetLayout() {
     VkDescriptorSetLayoutBinding ubo_layout_binding{};
@@ -215,7 +282,7 @@ void TriangleApplication::CreateCommandBuffers() {
         render_pass_begin_info.renderArea.extent = swapchain_extent_;
 
         std::array<VkClearValue, 2> clear_values{};
-        clear_values[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+        clear_values[0].color = {1.0f, 1.0f, 1.0f, 1.0f};
         clear_values[1].depthStencil = {1.0f, 0};
 
         render_pass_begin_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
@@ -241,4 +308,21 @@ void TriangleApplication::CreateCommandBuffers() {
             throw std::runtime_error("failed to record command buffer!");
         }
     }
+}
+
+void TriangleApplication::UpdateUniformBuffer(uint32_t current_image) {
+    UniformBufferObject ubo{};
+    ubo.model = glm::mat4(1.0f);
+    ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f),
+                           glm::vec3(0.0f, 0.0f, 0.0f),
+                           glm::vec3(0.0f, 1.0f, 0.0f));
+    ubo.proj = glm::perspective(glm::radians(45.0f),
+                                swapchain_extent_.width / (float) swapchain_extent_.height,
+                                0.1f,
+                                10.0f);
+    ubo.proj[1][1] *= -1;
+    void *data;
+    vkMapMemory(device_, uniform_buffers_memory_[current_image], 0, sizeof(ubo), 0, &data);
+    memcpy(data, &ubo, sizeof(ubo));
+    vkUnmapMemory(device_, uniform_buffers_memory_[current_image]);
 }
