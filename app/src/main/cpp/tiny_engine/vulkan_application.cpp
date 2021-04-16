@@ -24,7 +24,6 @@ void VulkanApplication::Init() {
     CreateCommandPool();
     CreateDepthResources();
     CreateFramebuffers();
-    CreateCommandBuffers();
     CreateVertexBuffer();
     CreateIndexBuffer();
     CreateUniformBuffers();
@@ -33,6 +32,7 @@ void VulkanApplication::Init() {
     CreateTextureImage();
     CreateTextureImageView();
     CreateTextureSampler();
+    CreateCommandBuffers();
     CreateSyncObjects();
 }
 
@@ -40,6 +40,7 @@ void VulkanApplication::Draw() {}
 
 void VulkanApplication::Cleanup() {
     DestroySyncObjects();
+    vkFreeCommandBuffers(device_, command_pool_, command_buffers_.size(), command_buffers_.data());
     vkDestroyDescriptorPool(device_, descriptor_pool_, nullptr);
     DestroyUniformBuffers();
     vkDestroyBuffer(device_, index_buffer_, nullptr);
@@ -490,8 +491,6 @@ void VulkanApplication::CreateFramebuffers() {
     }
 }
 
-void VulkanApplication::CreateCommandBuffers() {}
-
 void VulkanApplication::CreateVertexBuffer() {}
 
 void VulkanApplication::CreateIndexBuffer() {}
@@ -507,6 +506,8 @@ void VulkanApplication::CreateTextureImage() {}
 void VulkanApplication::CreateTextureImageView() {}
 
 void VulkanApplication::CreateTextureSampler() {}
+
+void VulkanApplication::CreateCommandBuffers() {}
 
 void VulkanApplication::CreateSyncObjects() {
     image_available_semaphores_.resize(max_frames_in_flight_);

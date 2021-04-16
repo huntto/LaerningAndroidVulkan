@@ -232,6 +232,8 @@ protected:
 
     std::vector<VkDescriptorSet> descriptor_sets_;
 
+    std::vector<VkCommandBuffer> command_buffers_;
+
     std::vector<VkSemaphore> image_available_semaphores_;
     std::vector<VkSemaphore> render_finished_semaphores_;
     std::vector<VkFence> in_flight_fences_;

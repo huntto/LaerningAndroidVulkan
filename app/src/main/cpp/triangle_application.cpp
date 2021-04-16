@@ -23,6 +23,8 @@ TriangleApplication::TriangleApplication(void *native_window, std::vector<char> 
     max_frames_in_flight_ = 2;
 }
 
+void TriangleApplication::Draw() {}
+
 void TriangleApplication::CreateDescriptorSetLayout() {
     VkDescriptorSetLayoutBinding ubo_layout_binding{};
     ubo_layout_binding.binding = 0;
@@ -182,5 +184,61 @@ void TriangleApplication::CreateDescriptorSets() {
 
         vkUpdateDescriptorSets(device_, static_cast<uint32_t>(descriptor_writes.size()),
                                descriptor_writes.data(), 0, nullptr);
+    }
+}
+
+void TriangleApplication::CreateCommandBuffers() {
+    command_buffers_.resize(framebuffers_.size());
+    VkCommandBufferAllocateInfo alloc_info{};
+    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_info.commandPool = command_pool_;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.commandBufferCount = (uint32_t) command_buffers_.size();
+
+    if (vkAllocateCommandBuffers(device_, &alloc_info, command_buffers_.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate command buffers!");
+    }
+
+    for (size_t i = 0; i < command_buffers_.size(); i++) {
+        VkCommandBufferBeginInfo begin_info{};
+        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+        if (vkBeginCommandBuffer(command_buffers_[i], &begin_info) != VK_SUCCESS) {
+            throw std::runtime_error("failed to begin recording command buffer!");
+        }
+
+        VkRenderPassBeginInfo render_pass_begin_info{};
+        render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        render_pass_begin_info.renderPass = render_pass_;
+        render_pass_begin_info.framebuffer = framebuffers_[i];
+        render_pass_begin_info.renderArea.offset = {0, 0};
+        render_pass_begin_info.renderArea.extent = swapchain_extent_;
+
+        std::array<VkClearValue, 2> clear_values{};
+        clear_values[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+        clear_values[1].depthStencil = {1.0f, 0};
+
+        render_pass_begin_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
+        render_pass_begin_info.pClearValues = clear_values.data();
+
+        vkCmdBeginRenderPass(command_buffers_[i], &render_pass_begin_info,
+                             VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(command_buffers_[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline_);
+
+        VkBuffer vertex_buffers[] = {vertex_buffer_};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(command_buffers_[i], 0, 1, vertex_buffers, offsets);
+        vkCmdBindIndexBuffer(command_buffers_[i], index_buffer_, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindDescriptorSets(command_buffers_[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                pipeline_layout_, 0, 1, &descriptor_sets_[i], 0, nullptr);
+
+        vkCmdDrawIndexed(command_buffers_[i], indices_.size(), 1, 0, 0, 0);
+
+        vkCmdEndRenderPass(command_buffers_[i]);
+
+        if (vkEndCommandBuffer(command_buffers_[i]) != VK_SUCCESS) {
+            throw std::runtime_error("failed to record command buffer!");
+        }
     }
 }

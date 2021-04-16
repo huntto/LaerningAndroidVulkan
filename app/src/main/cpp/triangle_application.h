@@ -51,6 +51,8 @@ public:
                         std::vector<char> vert_shader_code,
                         std::vector<char> frag_shader_code);
 
+    virtual void Draw() override;
+
 protected:
     virtual void CreateDescriptorSetLayout() override;
 
@@ -63,6 +65,8 @@ protected:
     virtual void CreateDescriptorPool() override;
 
     virtual void CreateDescriptorSets() override;
+
+    virtual void CreateCommandBuffers() override;
 
 private:
     std::vector<Vertex> vertices_ = {
