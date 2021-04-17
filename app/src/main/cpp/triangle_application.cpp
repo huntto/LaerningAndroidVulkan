@@ -39,8 +39,6 @@ void TriangleApplication::Draw() {
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
-    UpdateUniformBuffer(image_index);
-
     if (images_in_flight_[image_index] != VK_NULL_HANDLE) {
         vkWaitForFences(device_, 1, &images_in_flight_[image_index], VK_TRUE, UINT64_MAX);
     }
@@ -90,6 +88,7 @@ void TriangleApplication::Draw() {
     }
 
     current_frame_ = (current_frame_ + 1) % max_frames_in_flight_;
+    vkDeviceWaitIdle(device_);
 }
 
 void TriangleApplication::CreateDescriptorSetLayout() {
@@ -193,6 +192,12 @@ void TriangleApplication::CreateUniformBuffers() {
     uniform_buffers_.resize(swapchain_images_.size());
     uniform_buffers_memory_.resize(swapchain_images_.size());
 
+    UniformBufferObject ubo{};
+    ubo.model = glm::mat4(1.0f);
+    ubo.view = glm::mat4(1.0f);
+    ubo.proj = glm::mat4(1.0f);
+    ubo.proj[1][1] *= -1;
+
     for (size_t i = 0; i < swapchain_images_.size(); i++) {
         CreateBuffer(physical_device_,
                      device_,
@@ -201,6 +206,12 @@ void TriangleApplication::CreateUniformBuffers() {
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      uniform_buffers_[i],
                      uniform_buffers_memory_[i]);
+
+
+        void *data;
+        vkMapMemory(device_, uniform_buffers_memory_[i], 0, sizeof(ubo), 0, &data);
+        memcpy(data, &ubo, sizeof(ubo));
+        vkUnmapMemory(device_, uniform_buffers_memory_[i]);
     }
 }
 
@@ -308,21 +319,4 @@ void TriangleApplication::CreateCommandBuffers() {
             throw std::runtime_error("failed to record command buffer!");
         }
     }
-}
-
-void TriangleApplication::UpdateUniformBuffer(uint32_t current_image) {
-    UniformBufferObject ubo{};
-    ubo.model = glm::mat4(1.0f);
-    ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f),
-                           glm::vec3(0.0f, 0.0f, 0.0f),
-                           glm::vec3(0.0f, 1.0f, 0.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f),
-                                swapchain_extent_.width / (float) swapchain_extent_.height,
-                                0.1f,
-                                10.0f);
-    ubo.proj[1][1] *= -1;
-    void *data;
-    vkMapMemory(device_, uniform_buffers_memory_[current_image], 0, sizeof(ubo), 0, &data);
-    memcpy(data, &ubo, sizeof(ubo));
-    vkUnmapMemory(device_, uniform_buffers_memory_[current_image]);
 }

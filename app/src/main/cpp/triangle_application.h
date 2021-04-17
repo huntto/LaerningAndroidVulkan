@@ -68,8 +68,6 @@ protected:
 
     virtual void CreateCommandBuffers() override;
 
-    virtual void UpdateUniformBuffer(uint32_t current_image);
-
 private:
     std::vector<Vertex> vertices_ = {
             {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},

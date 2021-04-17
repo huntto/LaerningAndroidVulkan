@@ -30,6 +30,7 @@ JNIEXPORT void JNICALL
 Java_com_ihuntto_tiny_1engine_MainActivity_cleanup(JNIEnv *env, jobject thiz) {
     if (application != nullptr) {
         application->Cleanup();
+        application = nullptr;
     }
 }
 
