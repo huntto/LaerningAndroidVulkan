@@ -1,0 +1,3 @@
+include ':texture'
+include ':triangle'
+rootProject.name = "tiny_engine"
