@@ -192,10 +192,15 @@ void TriangleApplication::CreateUniformBuffers() {
     uniform_buffers_.resize(swapchain_images_.size());
     uniform_buffers_memory_.resize(swapchain_images_.size());
 
+    float aspect_ratio = swapchain_extent_.width > swapchain_extent_.height
+                         ? (float) swapchain_extent_.width / swapchain_extent_.height
+                         : (float) swapchain_extent_.height / swapchain_extent_.width;
     UniformBufferObject ubo{};
     ubo.model = glm::mat4(1.0f);
     ubo.view = glm::mat4(1.0f);
-    ubo.proj = glm::mat4(1.0f);
+    ubo.proj = glm::ortho(-1.0f, 1.0f,
+                          -aspect_ratio, aspect_ratio,
+                          -1.0f, 1.0f);
     ubo.proj[1][1] *= -1;
 
     for (size_t i = 0; i < swapchain_images_.size(); i++) {
