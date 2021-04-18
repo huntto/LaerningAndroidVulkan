@@ -45,9 +45,9 @@ struct UniformBufferObject {
     glm::mat4 proj;
 };
 
-class TextureApplication : public tiny_engine::VulkanApplication {
+class TriangleApplication : public tiny_engine::VulkanApplication {
 public:
-    TextureApplication(void *native_window,
+    TriangleApplication(void *native_window,
                        std::vector<char> vert_shader_code,
                        std::vector<char> frag_shader_code);
 

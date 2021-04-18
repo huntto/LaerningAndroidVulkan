@@ -5,7 +5,7 @@
 
 #include <log.h>
 
-TextureApplication::TextureApplication(void *native_window, std::vector<char> vert_shader_code,
+TriangleApplication::TriangleApplication(void *native_window, std::vector<char> vert_shader_code,
                                        std::vector<char> frag_shader_code) {
     layers_ = {
             "VK_LAYER_KHRONOS_validation"
@@ -24,7 +24,7 @@ TextureApplication::TextureApplication(void *native_window, std::vector<char> ve
     max_frames_in_flight_ = 2;
 }
 
-void TextureApplication::Draw() {
+void TriangleApplication::Draw() {
     vkWaitForFences(device_, 1, &in_flight_fences_[current_frame_], VK_TRUE, UINT64_MAX);
 
     uint32_t image_index;
@@ -91,7 +91,7 @@ void TextureApplication::Draw() {
     vkDeviceWaitIdle(device_);
 }
 
-void TextureApplication::CreateDescriptorSetLayout() {
+void TriangleApplication::CreateDescriptorSetLayout() {
     VkDescriptorSetLayoutBinding ubo_layout_binding{};
     ubo_layout_binding.binding = 0;
     ubo_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -112,7 +112,7 @@ void TextureApplication::CreateDescriptorSetLayout() {
     }
 }
 
-void TextureApplication::CreateVertexBuffer() {
+void TriangleApplication::CreateVertexBuffer() {
     VkDeviceSize buffer_size = sizeof(vertices_[0]) * vertices_.size();
 
     VkBuffer staging_buffer;
@@ -150,7 +150,7 @@ void TextureApplication::CreateVertexBuffer() {
     vkFreeMemory(device_, staging_buffer_memory, nullptr);
 }
 
-void TextureApplication::CreateIndexBuffer() {
+void TriangleApplication::CreateIndexBuffer() {
     VkDeviceSize buffer_size = sizeof(indices_[0]) * indices_.size();
     VkBuffer staging_buffer;
     VkDeviceMemory staging_buffer_memory;
@@ -186,7 +186,7 @@ void TextureApplication::CreateIndexBuffer() {
     vkFreeMemory(device_, staging_buffer_memory, nullptr);
 }
 
-void TextureApplication::CreateUniformBuffers() {
+void TriangleApplication::CreateUniformBuffers() {
     VkDeviceSize buffer_size = sizeof(UniformBufferObject);
 
     uniform_buffers_.resize(swapchain_images_.size());
@@ -220,7 +220,7 @@ void TextureApplication::CreateUniformBuffers() {
     }
 }
 
-void TextureApplication::CreateDescriptorPool() {
+void TriangleApplication::CreateDescriptorPool() {
     std::array<VkDescriptorPoolSize, 1> pool_sizes;
     pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     pool_sizes[0].descriptorCount = static_cast<uint32_t>(swapchain_images_.size());
@@ -236,7 +236,7 @@ void TextureApplication::CreateDescriptorPool() {
     }
 }
 
-void TextureApplication::CreateDescriptorSets() {
+void TriangleApplication::CreateDescriptorSets() {
     std::vector<VkDescriptorSetLayout> layouts(swapchain_images_.size(), descriptor_set_layout_);
     VkDescriptorSetAllocateInfo alloc_info{};
     alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -270,7 +270,7 @@ void TextureApplication::CreateDescriptorSets() {
     }
 }
 
-void TextureApplication::CreateCommandBuffers() {
+void TriangleApplication::CreateCommandBuffers() {
     command_buffers_.resize(framebuffers_.size());
     VkCommandBufferAllocateInfo alloc_info{};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
