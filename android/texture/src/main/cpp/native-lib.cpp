@@ -5,9 +5,9 @@
 #include <android/asset_manager_jni.h>
 
 #include <filesystem.h>
-#include "triangle_application.h"
+#include "texture_application.h"
 
-std::shared_ptr<TriangleApplication> application;
+std::shared_ptr<TextureApplication> application;
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -18,9 +18,9 @@ Java_com_ihuntto_tiny_1engine_texture_MainActivity_init(JNIEnv *env, jobject thi
         auto frag_shader_code = tiny_engine::Filesystem::GetInstance().Read<char>(
                 "shaders/base.frag.spv");
         ANativeWindow *native_window = ANativeWindow_fromSurface(env, surface);
-        application = std::make_shared<TriangleApplication>(native_window,
-                                                            vert_shader_code,
-                                                            frag_shader_code);
+        application = std::make_shared<TextureApplication>(native_window,
+                                                           vert_shader_code,
+                                                           frag_shader_code);
         application->Init();
     }
 }

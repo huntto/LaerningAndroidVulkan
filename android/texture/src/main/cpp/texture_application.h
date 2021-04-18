@@ -1,5 +1,5 @@
-#ifndef TINY_ENGINE_TRIANGLE_APPLICATION_H
-#define TINY_ENGINE_TRIANGLE_APPLICATION_H
+#ifndef TINY_ENGINE_TEXTURE_APPLICATION_H
+#define TINY_ENGINE_TEXTURE_APPLICATION_H
 
 #include <vulkan_application.h>
 
@@ -12,6 +12,7 @@
 struct Vertex {
     glm::vec3 pos;
     glm::vec3 color;
+    glm::vec2 tex_coord;
 
     static std::vector<VkVertexInputBindingDescription> GetBindingDescription() {
         VkVertexInputBindingDescription binding_description{};
@@ -22,7 +23,7 @@ struct Vertex {
     }
 
     static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
-        std::vector<VkVertexInputAttributeDescription> attribute_descriptions(2);
+        std::vector<VkVertexInputAttributeDescription> attribute_descriptions(3);
         attribute_descriptions[0].binding = 0;
         attribute_descriptions[0].location = 0;
         attribute_descriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
@@ -31,11 +32,15 @@ struct Vertex {
         attribute_descriptions[1].location = 1;
         attribute_descriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
         attribute_descriptions[1].offset = offsetof(Vertex, color);
+        attribute_descriptions[2].binding = 0;
+        attribute_descriptions[2].location = 2;
+        attribute_descriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+        attribute_descriptions[2].offset = offsetof(Vertex, tex_coord);
         return attribute_descriptions;
     }
 
     bool operator==(const Vertex &other) const {
-        return pos == other.pos && color == other.color;
+        return pos == other.pos && color == other.color && tex_coord == other.tex_coord;
     }
 };
 
@@ -45,16 +50,24 @@ struct UniformBufferObject {
     glm::mat4 proj;
 };
 
-class TriangleApplication : public tiny_engine::VulkanApplication {
+class TextureApplication : public tiny_engine::VulkanApplication {
 public:
-    TriangleApplication(void *native_window,
-                        std::vector<char> vert_shader_code,
-                        std::vector<char> frag_shader_code);
+    TextureApplication(void *native_window,
+                       std::vector<char> vert_shader_code,
+                       std::vector<char> frag_shader_code);
 
     virtual void Draw() override;
 
+    virtual void Cleanup() override;
+
 protected:
     virtual void CreateDescriptorSetLayout() override;
+
+    virtual void CreateTextureImage() override;
+
+    virtual void CreateTextureImageView() override;
+
+    virtual void CreateTextureSampler() override;
 
     virtual void CreateVertexBuffer() override;
 
@@ -70,13 +83,19 @@ protected:
 
 private:
     std::vector<Vertex> vertices_ = {
-            {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-            {{0.5f,  -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-            {{0.0f,  0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}},
+            {{-1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
+            {{1.0f,  -1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
+            {{1.0f,  1.0f,  0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+            {{-1.0f, 1.0f,  0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
     };
-    std::vector<uint16_t> indices_ = {0, 1, 2};
+    std::vector<uint16_t> indices_ = {0, 1, 2, 2, 3, 0};
     size_t current_frame_ = 0;
+
+    VkImage texture_image_;
+    VkDeviceMemory texture_image_memory_;
+    VkImageView texture_image_view_;
+    VkSampler texture_sampler_;
 };
 
 
-#endif //TINY_ENGINE_TRIANGLE_APPLICATION_H
+#endif //TINY_ENGINE_TEXTURE_APPLICATION_H

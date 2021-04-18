@@ -1,12 +1,15 @@
-#include "triangle_application.h"
+#include "texture_application.h"
 
 #include <array>
 #include <glm/gtc/matrix_transform.hpp>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 #include <log.h>
+#include <filesystem.h>
 
-TriangleApplication::TriangleApplication(void *native_window, std::vector<char> vert_shader_code,
-                                         std::vector<char> frag_shader_code) {
+TextureApplication::TextureApplication(void *native_window, std::vector<char> vert_shader_code,
+                                       std::vector<char> frag_shader_code) {
     layers_ = {
             "VK_LAYER_KHRONOS_validation"
     };
@@ -24,7 +27,7 @@ TriangleApplication::TriangleApplication(void *native_window, std::vector<char> 
     max_frames_in_flight_ = 2;
 }
 
-void TriangleApplication::Draw() {
+void TextureApplication::Draw() {
     vkWaitForFences(device_, 1, &in_flight_fences_[current_frame_], VK_TRUE, UINT64_MAX);
 
     uint32_t image_index;
@@ -91,15 +94,31 @@ void TriangleApplication::Draw() {
     vkDeviceWaitIdle(device_);
 }
 
-void TriangleApplication::CreateDescriptorSetLayout() {
+void TextureApplication::Cleanup() {
+    vkDestroySampler(device_, texture_sampler_, nullptr);
+    vkDestroyImageView(device_, texture_image_view_, nullptr);
+    vkDestroyImage(device_, texture_image_, nullptr);
+    vkFreeMemory(device_, texture_image_memory_, nullptr);
+    VulkanApplication::Cleanup();
+}
+
+void TextureApplication::CreateDescriptorSetLayout() {
     VkDescriptorSetLayoutBinding ubo_layout_binding{};
     ubo_layout_binding.binding = 0;
-    ubo_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     ubo_layout_binding.descriptorCount = 1;
+    ubo_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     ubo_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     ubo_layout_binding.pImmutableSamplers = nullptr;
 
-    std::array<VkDescriptorSetLayoutBinding, 1> bindings = {ubo_layout_binding};
+    VkDescriptorSetLayoutBinding sampler_layout_binding{};
+    sampler_layout_binding.binding = 1;
+    sampler_layout_binding.descriptorCount = 1;
+    sampler_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    sampler_layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    sampler_layout_binding.pImmutableSamplers = nullptr;
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {ubo_layout_binding,
+                                                            sampler_layout_binding};
 
     VkDescriptorSetLayoutCreateInfo layout_create_info{};
     layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -112,7 +131,106 @@ void TriangleApplication::CreateDescriptorSetLayout() {
     }
 }
 
-void TriangleApplication::CreateVertexBuffer() {
+void TextureApplication::CreateTextureImage() {
+    int tex_width, tex_height, tex_channels;
+    auto img = tiny_engine::Filesystem::GetInstance().Read<stbi_uc>("textures/texture.jpg");
+    stbi_uc *pixels = stbi_load_from_memory(img.data(),
+                                            img.size(),
+                                            &tex_width,
+                                            &tex_height,
+                                            &tex_channels,
+                                            STBI_rgb_alpha);
+    VkDeviceSize image_size = tex_width * tex_height * 4;
+
+    if (!pixels) {
+        throw std::runtime_error("failed to load texture image!");
+    }
+
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_buffer_memory;
+    CreateBuffer(physical_device_,
+                 device_,
+                 image_size,
+                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 staging_buffer,
+                 staging_buffer_memory);
+
+    void *data;
+    vkMapMemory(device_, staging_buffer_memory, 0, image_size, 0, &data);
+    memcpy(data, pixels, static_cast<size_t>(image_size));
+    vkUnmapMemory(device_, staging_buffer_memory);
+
+    stbi_image_free(pixels);
+
+    CreateImage(physical_device_,
+                device_,
+                tex_width,
+                tex_height,
+                VK_FORMAT_R8G8B8A8_SRGB,
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                texture_image_,
+                texture_image_memory_);
+
+    TransitionImageLayout(device_,
+                          command_pool_,
+                          graphics_queue_,
+                          texture_image_,
+                          VK_FORMAT_R8G8B8A8_SRGB,
+                          VK_IMAGE_LAYOUT_UNDEFINED,
+                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    CopyBufferToImage(device_,
+                      command_pool_,
+                      graphics_queue_,
+                      staging_buffer,
+                      texture_image_,
+                      static_cast<uint32_t>(tex_width),
+                      static_cast<uint32_t>(tex_height));
+
+    TransitionImageLayout(device_,
+                          command_pool_,
+                          graphics_queue_,
+                          texture_image_,
+                          VK_FORMAT_R8G8B8A8_SRGB,
+                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vkDestroyBuffer(device_, staging_buffer, nullptr);
+    vkFreeMemory(device_, staging_buffer_memory, nullptr);
+}
+
+void TextureApplication::CreateTextureImageView() {
+    texture_image_view_ = CreateImageView(device_,
+                                          texture_image_,
+                                          VK_FORMAT_R8G8B8A8_SRGB,
+                                          VK_IMAGE_ASPECT_COLOR_BIT);
+}
+
+void TextureApplication::CreateTextureSampler() {
+    VkSamplerCreateInfo sampler_create_info{};
+    sampler_create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_create_info.magFilter = VK_FILTER_LINEAR;
+    sampler_create_info.minFilter = VK_FILTER_LINEAR;
+    sampler_create_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_create_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_create_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_create_info.anisotropyEnable = VK_FALSE;
+    sampler_create_info.maxAnisotropy = 16.0f;
+    sampler_create_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    sampler_create_info.unnormalizedCoordinates = VK_FALSE;
+    sampler_create_info.compareEnable = VK_FALSE;
+    sampler_create_info.compareOp = VK_COMPARE_OP_ALWAYS;
+    sampler_create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+    if (vkCreateSampler(device_, &sampler_create_info, nullptr, &texture_sampler_) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create texture sampler!");
+    }
+}
+
+void TextureApplication::CreateVertexBuffer() {
     VkDeviceSize buffer_size = sizeof(vertices_[0]) * vertices_.size();
 
     VkBuffer staging_buffer;
@@ -150,7 +268,7 @@ void TriangleApplication::CreateVertexBuffer() {
     vkFreeMemory(device_, staging_buffer_memory, nullptr);
 }
 
-void TriangleApplication::CreateIndexBuffer() {
+void TextureApplication::CreateIndexBuffer() {
     VkDeviceSize buffer_size = sizeof(indices_[0]) * indices_.size();
     VkBuffer staging_buffer;
     VkDeviceMemory staging_buffer_memory;
@@ -186,7 +304,7 @@ void TriangleApplication::CreateIndexBuffer() {
     vkFreeMemory(device_, staging_buffer_memory, nullptr);
 }
 
-void TriangleApplication::CreateUniformBuffers() {
+void TextureApplication::CreateUniformBuffers() {
     VkDeviceSize buffer_size = sizeof(UniformBufferObject);
 
     uniform_buffers_.resize(swapchain_images_.size());
@@ -220,10 +338,12 @@ void TriangleApplication::CreateUniformBuffers() {
     }
 }
 
-void TriangleApplication::CreateDescriptorPool() {
-    std::array<VkDescriptorPoolSize, 1> pool_sizes;
+void TextureApplication::CreateDescriptorPool() {
+    std::array<VkDescriptorPoolSize, 2> pool_sizes{};
     pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     pool_sizes[0].descriptorCount = static_cast<uint32_t>(swapchain_images_.size());
+    pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    pool_sizes[1].descriptorCount = static_cast<uint32_t>(swapchain_images_.size());
 
     VkDescriptorPoolCreateInfo pool_create_info{};
     pool_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -236,7 +356,7 @@ void TriangleApplication::CreateDescriptorPool() {
     }
 }
 
-void TriangleApplication::CreateDescriptorSets() {
+void TextureApplication::CreateDescriptorSets() {
     std::vector<VkDescriptorSetLayout> layouts(swapchain_images_.size(), descriptor_set_layout_);
     VkDescriptorSetAllocateInfo alloc_info{};
     alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -255,7 +375,12 @@ void TriangleApplication::CreateDescriptorSets() {
         buffer_info.offset = 0;
         buffer_info.range = sizeof(UniformBufferObject);
 
-        std::array<VkWriteDescriptorSet, 1> descriptor_writes{};
+        VkDescriptorImageInfo image_info{};
+        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        image_info.imageView = texture_image_view_;
+        image_info.sampler = texture_sampler_;
+
+        std::array<VkWriteDescriptorSet, 2> descriptor_writes{};
 
         descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptor_writes[0].dstSet = descriptor_sets_[i];
@@ -265,12 +390,20 @@ void TriangleApplication::CreateDescriptorSets() {
         descriptor_writes[0].descriptorCount = 1;
         descriptor_writes[0].pBufferInfo = &buffer_info;
 
+        descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[1].dstSet = descriptor_sets_[i];
+        descriptor_writes[1].dstBinding = 1;
+        descriptor_writes[1].dstArrayElement = 0;
+        descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptor_writes[1].descriptorCount = 1;
+        descriptor_writes[1].pImageInfo = &image_info;
+
         vkUpdateDescriptorSets(device_, static_cast<uint32_t>(descriptor_writes.size()),
                                descriptor_writes.data(), 0, nullptr);
     }
 }
 
-void TriangleApplication::CreateCommandBuffers() {
+void TextureApplication::CreateCommandBuffers() {
     command_buffers_.resize(framebuffers_.size());
     VkCommandBufferAllocateInfo alloc_info{};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -315,6 +448,7 @@ void TriangleApplication::CreateCommandBuffers() {
         vkCmdBindIndexBuffer(command_buffers_[i], index_buffer_, 0, VK_INDEX_TYPE_UINT16);
         vkCmdBindDescriptorSets(command_buffers_[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 pipeline_layout_, 0, 1, &descriptor_sets_[i], 0, nullptr);
+
 
         vkCmdDrawIndexed(command_buffers_[i], indices_.size(), 1, 0, 0, 0);
 

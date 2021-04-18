@@ -27,11 +27,11 @@ void VulkanApplication::Init() {
     CreateVertexBuffer();
     CreateIndexBuffer();
     CreateUniformBuffers();
-    CreateDescriptorPool();
-    CreateDescriptorSets();
     CreateTextureImage();
     CreateTextureImageView();
     CreateTextureSampler();
+    CreateDescriptorPool();
+    CreateDescriptorSets();
     CreateCommandBuffers();
     CreateSyncObjects();
 }
@@ -497,15 +497,15 @@ void VulkanApplication::CreateIndexBuffer() {}
 
 void VulkanApplication::CreateUniformBuffers() {}
 
-void VulkanApplication::CreateDescriptorPool() {}
-
-void VulkanApplication::CreateDescriptorSets() {}
-
 void VulkanApplication::CreateTextureImage() {}
 
 void VulkanApplication::CreateTextureImageView() {}
 
 void VulkanApplication::CreateTextureSampler() {}
+
+void VulkanApplication::CreateDescriptorPool() {}
+
+void VulkanApplication::CreateDescriptorSets() {}
 
 void VulkanApplication::CreateCommandBuffers() {}
 
@@ -1053,4 +1053,36 @@ void VulkanApplication::CopyBuffer(VkDevice device,
     vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
 }
 
+void VulkanApplication::CopyBufferToImage(VkDevice device,
+                                          VkCommandPool command_pool,
+                                          VkQueue graphics_queue,
+                                          VkBuffer buffer,
+                                          VkImage image,
+                                          uint32_t width,
+                                          uint32_t height) {
+    VkCommandBuffer command_buffer = BeginSingleTimeCommands(device, command_pool);
+
+    VkBufferImageCopy region{};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {
+            width,
+            height,
+            1
+    };
+
+    vkCmdCopyBufferToImage(command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                           &region);
+
+    EndSingleTimeCommands(device,
+                          command_pool,
+                          graphics_queue,
+                          command_buffer);
+}
 } // namespace tiny_engine

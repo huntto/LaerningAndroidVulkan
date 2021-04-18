@@ -174,6 +174,14 @@ protected:
                             VkBuffer dst_buffer,
                             VkDeviceSize size);
 
+    virtual void CopyBufferToImage(VkDevice device,
+                                   VkCommandPool command_pool,
+                                   VkQueue graphics_queue,
+                                   VkBuffer buffer,
+                                   VkImage image,
+                                   uint32_t width,
+                                   uint32_t height);
+
 protected:
     std::string application_name_;
     std::vector<const char *> extensions_;

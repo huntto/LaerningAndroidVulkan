@@ -12,13 +12,15 @@ set_target_properties(VkLayer_khronos_validation-lib
         PROPERTIES IMPORTED_LOCATION
         ${CMAKE_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libVkLayer_khronos_validation.so)
 
-include_directories(../../../../../third_party/glm
+include_directories(
+        ../../../../../third_party/glm
+        ../../../../../third_party/stb
         ../../../../../library)
 
 add_library(native-lib
         SHARED
         native-lib.cpp
-        triangle_application.cpp
+        texture_application.cpp
         ../../../../../library/vulkan_application.cpp
         ../../../../../library/filesystem.cpp)
 
