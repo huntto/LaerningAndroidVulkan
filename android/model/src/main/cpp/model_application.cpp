@@ -24,7 +24,7 @@ ModelApplication::ModelApplication(void *native_window, std::vector<char> vert_s
             VK_KHR_ANDROID_SURFACE_EXTENSION_NAME,
             VK_EXT_DEBUG_UTILS_EXTENSION_NAME
     };
-    application_name_ = "Triangle";
+    application_name_ = "Model";
     native_window_ = native_window;
     vert_shader_code_ = vert_shader_code;
     frag_shader_code_ = frag_shader_code;
