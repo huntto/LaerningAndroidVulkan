@@ -1,4 +1,4 @@
-package com.ihuntto.tiny_engine.model;
+package com.ihuntto.android_vulkan.triangle;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,7 +14,6 @@ import android.view.SurfaceView;
 import android.view.View;
 
 public class MainActivity extends AppCompatActivity {
-
     private static final String TAG = MainActivity.class.getSimpleName();
 
     // Used to load the 'native-lib' library on application startup.
@@ -32,33 +31,10 @@ public class MainActivity extends AppCompatActivity {
         setAssetManager(getAssets(), getDataDir().getAbsolutePath());
         surfaceView.getHolder().addCallback(mCallback);
         surfaceView.setOnTouchListener(new View.OnTouchListener() {
-            private float mPrevX;
-            private float mPrevY;
-
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 Log.d(TAG, "onTouch");
-                int width = surfaceView.getWidth();
-                int height = surfaceView.getHeight();
-                switch (motionEvent.getActionMasked()) {
-                    case MotionEvent.ACTION_DOWN:
-                        mPrevX = motionEvent.getX() / width * 2 - 1;
-                        mPrevY = -(motionEvent.getY() / height * 2 - 1);
-                        break;
-                    case MotionEvent.ACTION_MOVE:
-                        float x = motionEvent.getX() / width * 2 - 1;
-                        float y = -(motionEvent.getY() / height * 2 - 1);
-                        float vx = x - mPrevX;
-                        float vy = y - mPrevY;
-                        mPrevX = x;
-                        mPrevY = y;
-                        if (Math.abs(vx) < 1e-6 && Math.abs(vy) < 1e-6) break;
-                        float dist = (float) Math.sqrt(vx * vx + vy * vy);
-
-                        rotate(dist, vy, vx, 0);
-                        draw();
-                        break;
-                }
+                draw();
                 return true;
             }
         });
@@ -91,6 +67,4 @@ public class MainActivity extends AppCompatActivity {
     private native void setAssetManager(@NonNull AssetManager assetManager, String dataPath);
 
     private native void draw();
-
-    private native void rotate(float radius, float x, float y, float z);
 }

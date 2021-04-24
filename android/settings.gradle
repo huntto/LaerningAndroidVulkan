@@ -3,4 +3,4 @@ include ':model'
 include ':cube'
 include ':texture'
 include ':triangle'
-rootProject.name = "tiny_engine"
+rootProject.name = "android_vulkan"

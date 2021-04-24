@@ -7,7 +7,7 @@ android {
     buildToolsVersion "30.0.3"
 
     defaultConfig {
-        applicationId "com.ihuntto.tiny_engine.triangle"
+        applicationId "com.ihuntto.android_vulkan.triangle"
         minSdkVersion 26
         targetSdkVersion 30
         versionCode 1

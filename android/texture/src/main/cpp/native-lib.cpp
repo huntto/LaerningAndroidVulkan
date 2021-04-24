@@ -11,7 +11,7 @@ std::shared_ptr<TextureApplication> application;
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_ihuntto_tiny_1engine_texture_MainActivity_init(JNIEnv *env, jobject thiz, jobject surface) {
+Java_com_ihuntto_android_1vulkan_texture_MainActivity_init(JNIEnv *env, jobject thiz, jobject surface) {
     if (application == nullptr) {
         auto vert_shader_code = tiny_engine::Filesystem::GetInstance().Read<char>(
                 "shaders/base.vert.spv");
@@ -27,7 +27,7 @@ Java_com_ihuntto_tiny_1engine_texture_MainActivity_init(JNIEnv *env, jobject thi
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_ihuntto_tiny_1engine_texture_MainActivity_cleanup(JNIEnv *env, jobject thiz) {
+Java_com_ihuntto_android_1vulkan_texture_MainActivity_cleanup(JNIEnv *env, jobject thiz) {
     if (application != nullptr) {
         application->Cleanup();
         application = nullptr;
@@ -36,7 +36,7 @@ Java_com_ihuntto_tiny_1engine_texture_MainActivity_cleanup(JNIEnv *env, jobject 
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_ihuntto_tiny_1engine_texture_MainActivity_setAssetManager(JNIEnv *env, jobject thiz,
+Java_com_ihuntto_android_1vulkan_texture_MainActivity_setAssetManager(JNIEnv *env, jobject thiz,
                                                            jobject asset_manager_obj,
                                                            jstring data_path) {
     AAssetManager *asset_manager = AAssetManager_fromJava(env, asset_manager_obj);
@@ -45,7 +45,7 @@ Java_com_ihuntto_tiny_1engine_texture_MainActivity_setAssetManager(JNIEnv *env, 
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_ihuntto_tiny_1engine_texture_MainActivity_draw(JNIEnv *env, jobject thiz) {
+Java_com_ihuntto_android_1vulkan_texture_MainActivity_draw(JNIEnv *env, jobject thiz) {
     if (application != nullptr) {
         application->Draw();
     }

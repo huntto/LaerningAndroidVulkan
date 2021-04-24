@@ -1,4 +1,4 @@
-package com.ihuntto.tiny_engine.triangle;
+package com.ihuntto.android_vulkan.texture;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,6 +14,7 @@ import android.view.SurfaceView;
 import android.view.View;
 
 public class MainActivity extends AppCompatActivity {
+
     private static final String TAG = MainActivity.class.getSimpleName();
 
     // Used to load the 'native-lib' library on application startup.

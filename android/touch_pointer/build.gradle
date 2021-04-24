@@ -7,7 +7,7 @@ android {
     buildToolsVersion "30.0.3"
 
     defaultConfig {
-        applicationId "com.ihuntto.tiny_engine.touch_pointer"
+        applicationId "com.ihuntto.android_vulkan.touch_pointer"
         minSdkVersion 26
         targetSdkVersion 30
         versionCode 1

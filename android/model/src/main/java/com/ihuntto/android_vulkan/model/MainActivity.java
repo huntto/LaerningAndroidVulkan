@@ -1,4 +1,4 @@
-package com.ihuntto.tiny_engine.cube;
+package com.ihuntto.android_vulkan.model;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;

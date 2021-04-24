@@ -1,4 +1,4 @@
-package com.ihuntto.tiny_engine.touch_pointer;
+package com.ihuntto.android_vulkan.touch_pointer;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
