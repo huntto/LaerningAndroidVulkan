@@ -332,7 +332,7 @@ void VulkanApplication::CreateGraphicsPipeline() {
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly{};
     input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    input_assembly.topology = primitive_topology_;
     input_assembly.primitiveRestartEnable = VK_FALSE;
 
     VkViewport viewport{};

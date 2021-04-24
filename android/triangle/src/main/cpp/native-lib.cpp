@@ -11,7 +11,8 @@ std::shared_ptr<TriangleApplication> application;
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_ihuntto_tiny_1engine_triangle_MainActivity_init(JNIEnv *env, jobject thiz, jobject surface) {
+Java_com_ihuntto_tiny_1engine_triangle_MainActivity_init(JNIEnv *env, jobject thiz,
+                                                         jobject surface) {
     if (application == nullptr) {
         auto vert_shader_code = tiny_engine::Filesystem::GetInstance().Read<char>(
                 "shaders/base.vert.spv");
@@ -19,8 +20,8 @@ Java_com_ihuntto_tiny_1engine_triangle_MainActivity_init(JNIEnv *env, jobject th
                 "shaders/base.frag.spv");
         ANativeWindow *native_window = ANativeWindow_fromSurface(env, surface);
         application = std::make_shared<TriangleApplication>(native_window,
-                                                           vert_shader_code,
-                                                           frag_shader_code);
+                                                            vert_shader_code,
+                                                            frag_shader_code);
         application->Init();
     }
 }
@@ -37,8 +38,8 @@ Java_com_ihuntto_tiny_1engine_triangle_MainActivity_cleanup(JNIEnv *env, jobject
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_ihuntto_tiny_1engine_triangle_MainActivity_setAssetManager(JNIEnv *env, jobject thiz,
-                                                           jobject asset_manager_obj,
-                                                           jstring data_path) {
+                                                                    jobject asset_manager_obj,
+                                                                    jstring data_path) {
     AAssetManager *asset_manager = AAssetManager_fromJava(env, asset_manager_obj);
     tiny_engine::Filesystem::GetInstance().Init(asset_manager);
 }

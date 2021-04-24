@@ -15,6 +15,7 @@
             <option value="$PROJECT_DIR$/cube" />
             <option value="$PROJECT_DIR$/model" />
             <option value="$PROJECT_DIR$/texture" />
+            <option value="$PROJECT_DIR$/touch_pointer" />
             <option value="$PROJECT_DIR$/triangle" />
           </set>
         </option>

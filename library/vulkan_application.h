@@ -193,6 +193,7 @@ protected:
     std::vector<char> frag_shader_code_;
     std::vector<VkVertexInputBindingDescription> binding_descriptions_;
     std::vector<VkVertexInputAttributeDescription> attribute_descriptions_;
+    VkPrimitiveTopology primitive_topology_ = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
     VkInstance instance_ = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT debug_messenger_ = VK_NULL_HANDLE;

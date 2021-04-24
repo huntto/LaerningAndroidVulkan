@@ -1,4 +1,4 @@
-#ifndef TINY_ENGINE_TEXTURE_APPLICATION_H
+#ifndef TINY_ENGINE_TRIANGLE_APPLICATION_H
 #define TINY_ENGINE_TRIANGLE_APPLICATION_H
 
 #include <vulkan_application.h>
@@ -48,8 +48,8 @@ struct UniformBufferObject {
 class TriangleApplication : public tiny_engine::VulkanApplication {
 public:
     TriangleApplication(void *native_window,
-                       std::vector<char> vert_shader_code,
-                       std::vector<char> frag_shader_code);
+                        std::vector<char> vert_shader_code,
+                        std::vector<char> frag_shader_code);
 
     virtual void Draw() override;
 
@@ -79,4 +79,4 @@ private:
 };
 
 
-#endif //TINY_ENGINE_TEXTURE_APPLICATION_H
+#endif //TINY_ENGINE_TRIANGLE_APPLICATION_H
